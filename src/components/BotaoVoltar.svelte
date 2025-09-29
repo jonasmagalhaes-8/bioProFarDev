@@ -1,13 +1,13 @@
-<script>
-  export let destino
+<script lang="ts">
+  export let destino: string
 </script>
 
-<div id="navegacao">
+<div class="navegacao">
   <a href={destino} class="botao">←</a>
 </div>
 
 <style>
-  #navegacao {
+  .navegacao {
     flex-basis: 100%;
     margin-left: 10px;
   }

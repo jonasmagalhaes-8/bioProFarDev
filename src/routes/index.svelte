@@ -1,17 +1,17 @@
 <script>
   import BarraDePesquisa from '@/components/BarraDePesquisa.svelte'
-  import MenuItem from '@/components/MenuItem.svelte'
+  import MenuItem from '@/components/HomeItem.svelte'
 
   const menuItems = [
     {
       img: 'https://cdn.grapesjs.com/workspaces/cmbrza1zt1qs08tm31bcj18yg/assets/c2edb7fa-b6ea-48d8-95c3-aa4e2b56a3d3__planta.png',
       label: 'Lista<br>RENAME',
-      to: '/lista',
+      to: '/listagemplantas?rename=true',
     },
     {
       img: 'https://cdn.grapesjs.com/workspaces/cmbrza1zt1qs08tm31bcj18yg/assets/c2edb7fa-b6ea-48d8-95c3-aa4e2b56a3d3__planta.png',
       label: 'Lista<br>ReniSUS',
-      to: '/renisus',
+      to: '/listagemplantas?rename=false',
     },
     {
       img: 'https://cdn.grapesjs.com/workspaces/cmbrza1zt1qs08tm31bcj18yg/assets/eda4ba82-8e82-4379-8f86-299a65b42f46__indicaes.png',
@@ -41,7 +41,6 @@
   ]
 </script>
 
-<BarraDePesquisa texto={'Buscar Planta'} backgroundColor={'#344028'} />
 <div class="divider"></div>
 
 <main class="grid-container">

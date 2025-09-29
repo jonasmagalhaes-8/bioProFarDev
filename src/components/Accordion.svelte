@@ -1,10 +1,10 @@
-<script>
+<script lang="ts">
   // importa o próprio componente para permitir recursão
   import Accordion from './Accordion.svelte'
 
-  export let titulo
-  export let texto = null
-  export let link = null
+  export let titulo: string | null = null
+  export let texto: string | null = null
+  export let link: string | null = null
   export let filhos = [] // lista de sub-accordions
 </script>
 
@@ -19,7 +19,9 @@
   </summary>
 
   <div class="textoAccordion">
-    <div>{texto}</div>
+    {#if texto}
+      <div>{@html texto}</div>
+    {/if}
 
     {#if link}
       <a class="linkItem" href={link} target="_blank" rel="noopener noreferrer"> Link </a>
@@ -61,7 +63,8 @@
   }
 
   .textoAccordion {
-    font-size: 2.44vh;
+    --font-size: 2.44vh;
+    font-size: 1.97vh;
     color: #354128;
     font-family: Verdana, Geneva, sans-serif;
     font-weight: 400;

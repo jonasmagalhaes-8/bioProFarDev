@@ -1,7 +1,7 @@
 <script>
   import BarraDePesquisa from '@/components/BarraDePesquisa.svelte'
   import BotaoVoltarHome from '@/components/BotaoVoltar.svelte'
-  import MenuIndicacoes from '@/components/MenuIndicacoes.svelte'
+  import MenuIndicacoes from '@/components/IndicacoesItem.svelte'
 
   const indicacoes = [
     {

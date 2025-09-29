@@ -1,8 +1,8 @@
-<script>
+<script lang="ts">
   import { url } from '@roxi/routify'
-  export let img = ''
-  export let label = ''
-  export let to = '/'
+  export let img: string
+  export let label: string
+  export let to: string = '/'
 </script>
 
 <a href={$url(to)} class="linhaItem">

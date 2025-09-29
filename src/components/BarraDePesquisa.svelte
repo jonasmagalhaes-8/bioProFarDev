@@ -1,13 +1,18 @@
-<script>
-  export let backgroundColor = ''
-  export let texto = ''
+<script lang="ts">
+  export let backgroundColor: string
+  export let texto: string
+
+  // 1. Variável reativa para o termo de pesquisa
+  // Ela será vinculada pelo componente pai usando `bind:termoPesquisa`
+  export let termoPesquisa: string = ''
 </script>
 
 <div class="top-bar" style="background-color: {backgroundColor}">
-  <input type="text" placeholder={'🔍 ' + texto} />
+  <input type="text" placeholder={'🔍 ' + texto} bind:value={termoPesquisa} />
 </div>
 
 <style>
+  /* ... (Seu CSS existente) ... */
   .top-bar {
     display: flex;
     align-items: center;

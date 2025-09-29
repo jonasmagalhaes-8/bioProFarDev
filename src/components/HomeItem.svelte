@@ -1,11 +1,13 @@
-<script>
-  import { url } from '@roxi/routify'
-  export let img = ''
-  export let label = ''
-  export let to = '/'
+<script lang="ts">
+  export let img: string
+  export let label: string
+  export let to: string | { path: string; query?: Record<string, string> }
 </script>
 
-<a href={$url(to)} class="menu-item">
+<a
+  class="menu-item"
+  href={typeof to === 'string' ? to : `${to.path}${to.query ? '?' + new URLSearchParams(to.query).toString() : ''}`}
+>
   <img src={img} alt={label} />
   <div class="label">{@html label}</div>
 </a>
@@ -34,7 +36,6 @@
   }
 
   img {
-    /* AJUSTE 3: Tamanho do ícone corrigido para 68px */
     width: 67.9px;
     align-items: flex-end;
     margin-top: 9px;
