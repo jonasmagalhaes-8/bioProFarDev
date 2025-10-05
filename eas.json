@@ -1,33 +1,17 @@
 {
   "cli": {
-    "version": ">=7.6.0",
+    "version": ">= 16.20.1",
     "appVersionSource": "remote"
   },
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "ios": {
-        "scheme": "App"
-      }
+      "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "ios": {
-        "scheme": "App"
-      }
+      "distribution": "internal"
     },
     "production": {
-      "distribution": "store",
-      "autoIncrement": true,
-      "ios": {
-        "scheme": "App"
-      }
-    },
-    "apk": {
-      "android": {
-        "buildType": "apk"
-      },
       "autoIncrement": true
     }
   },
