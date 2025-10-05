@@ -1,0 +1,1 @@
+import{f as o,b as r}from"./index-BRzh14zm.js";var s=o('<div class="page svelte-rtad8h"><h1 class="svelte-rtad8h">Lista de favoritos</h1> <p>Rota: /favoritos</p> <a href="/">⬅ Voltar</a></div>');function v(a){var t=s();r(a,t)}export{v as default};
