@@ -12,16 +12,16 @@
   const descricao: string = rename
     ? 'A Relação Nacional de Medicamentos essenciais (Rename) é um importante instrumento orientador sobre o uso de medicamentos e insumos no Sistema Único de Saúde (SUS). Atualizada a cada dois anos, a Rename 2024 apresenta os medicamentos disponíveis no SUS em todos os níveis de atenção e organizados por responsabilidades de financiamento.'
     : 'A Relação Nacional de Plantas Medicinais de Interesse ao Sistema Único de Saúde (Renisus) é uma lista elaborada pelo Ministério da Saúde que reúne espécies vegetais com potencial de uso terapêutico para orientar pesquisas, desenvolvimento de medicamentos fitoterápicos e políticas públicas no SUS. O objetivo é fortalecer o uso seguro e eficaz de plantas medicinais, promover a produção científica e regulamentar o uso dessas espécies na atenção básica em saúde.'
-  const descricaoListagemPlantas: string = rename ? 'Lista de fitoterápicos inclusos na RENAME:' : 'Lista ReniSUS:'
+  let descricaoListagemPlantas: string = 'Carregando plantas...'
 
   let plantas: Planta[] = [] // Inicializa como array vazio para evitar erros
-  let mensagem: string
 
   // 1. Variável para receber o termo de pesquisa do componente filho
   let termoPesquisa: string = ''
 
   onMount(async () => {
     plantas = await controllerListagemPlantas(rename ? 'SIM' : null, !rename ? 'SIM' : null)
+    descricaoListagemPlantas = rename ? 'Lista de fitoterápicos inclusos na RENAME:' : 'Lista ReniSUS:'
   })
 
   // 2. Variável reativa/derivada para a lista filtrada

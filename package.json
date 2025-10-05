@@ -2,9 +2,12 @@
   "name": "starter",
   "type": "module",
   "scripts": {
+    "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "dev": "vite"
+    "sync:android": "npx cap sync android",
+    "sync:ios": "npx cap sync ios",
+    "prebuild:eas": "npm run build && npx cap sync"
   },
   "devDependencies": {
     "@roxi/routify": "^3.0.0-next.289",
@@ -13,6 +16,11 @@
     "vite": "^6.0.0"
   },
   "dependencies": {
-    "axios": "^1.12.2"
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/cli": "^7.4.3",
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/ios": "^7.4.3",
+    "axios": "^1.12.2",
+    "spank": "^2.2.4"
   }
 }

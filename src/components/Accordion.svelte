@@ -73,6 +73,6 @@
   .linkItem {
     color: #2461ae;
     font-family: Verdana, Geneva, sans-serif;
-    font-size: 2.44vh;
+    font-size: 1.97vh;
   }
 </style>

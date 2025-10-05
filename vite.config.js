@@ -17,7 +17,7 @@ export default defineConfig({
         routify({
             render: {
                 ssg: !!production,
-                ssr: !!production,
+                ssr: false,   // 🔴 desliga SSR
             },
         }),
         svelte({
