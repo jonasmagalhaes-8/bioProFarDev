@@ -7,6 +7,5 @@
 /node_modules
 /.vs/bioProFarDev/v17
 /.vs
-/dist/client
 /android/app
 /android
