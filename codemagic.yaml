@@ -9,8 +9,6 @@ workflows:
       node: latest
       xcode: latest
       cocoapods: default
-      groups:
-        - Apple
     scripts:
       - name: Install dependencies
         script: |
@@ -42,6 +40,8 @@ workflows:
       - build/App.xcarchive
     publishing:
       app_store_connect:
-        api_key: $APP_STORE_CONNECT_API_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        private_key: $APP_STORE_CONNECT_API_KEY
         submit_to_testflight: true
         submit_to_app_store: false
