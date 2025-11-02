@@ -2,10 +2,10 @@ import { Planta } from '@/models/Planta';
 import { Response } from '@/models/Response';
 import { api } from '@/util/api';
 
-export async function serviceListagemPlantas(filtroRename?: string, filtroReniSUS?: string) {
+export async function serviceListagemPlantas(filtroRename?: string, filtroReniSUS?: string, idIndicacaoUso?: Number) {
     try {
         const json = await api.get('/planta/listagem', {
-            params: { filtroRename, filtroReniSUS },
+            params: { filtroRename, filtroReniSUS, idIndicacaoUso },
         });
 
         const requisicao = new Response(json.data);

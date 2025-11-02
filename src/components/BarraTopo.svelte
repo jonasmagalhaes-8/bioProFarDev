@@ -9,7 +9,7 @@
 
 <style>
   .barraTopoTitulo {
-    background-color: #354128;
+    background: linear-gradient(120deg, #2e3b1f, #556b2f);
     display: flex;
     align-items: center;
     height: 14.5vh;

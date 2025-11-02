@@ -27,16 +27,21 @@
     width: 100%;
     max-width: 500px;
     height: 5vh;
-    border-radius: 5px;
-    border: 0.1px solid black;
+    border-radius: 10px;
+    border: none;
     font-size: 16.5px;
     padding: 0 5px;
     box-sizing: border-box;
     background-color: white;
   }
-
+  .top-bar input:focus {
+    box-shadow:
+      inset 0 2px 8px rgba(0, 0, 0, 0.2),
+      0 0 6px rgba(60, 120, 220, 0.4);
+    transform: scale(1.02);
+  }
   .top-bar input::placeholder {
-    color: #888;
+    color: #999;
     opacity: 1;
   }
 </style>

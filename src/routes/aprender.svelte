@@ -31,10 +31,11 @@
 
   .fonteDescricaoTopico {
     font-size: 2.44vh;
-    color: #354128;
+    color: #3f4a2c;
     font-family: Verdana, Geneva, sans-serif;
     font-weight: 400;
-    margin-bottom: 45px;
+    line-height: 1.6;
+    margin-bottom: 32px;
   }
 
   #container {
@@ -52,5 +53,15 @@
     color: #354128;
     font-family: Verdana, Geneva, sans-serif;
     font-weight: 700;
+  }
+
+  .fonteTituloTopico::after {
+    content: '';
+    display: block;
+    width: '100%';
+    height: 3px;
+    background: linear-gradient(to right, #7a8863, #a1b07d);
+    border-radius: 2px;
+    margin-top: 4px;
   }
 </style>

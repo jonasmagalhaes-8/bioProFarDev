@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { params } from '@roxi/routify'
+  import { params, url } from '@roxi/routify'
   import BotaoVoltar from '@/components/BotaoVoltar.svelte'
   import { Planta } from '@/models/Planta'
   import { controllerObterPlantaPorID } from '@/controllers/plantaController'
@@ -8,6 +8,9 @@
   import Accordion from '@/components/Accordion.svelte'
 
   const idPlanta: number = $params.id
+  const origemListagemRename: string = $params.rename
+  const idIndicacaoUso: string = $params.idIndicacaoUso
+
   let titulo: string = 'Carregando Planta...'
   let planta: Planta = new Planta()
 
@@ -30,7 +33,11 @@
 </script>
 
 <BarraTopo {titulo} tamanhoFonte="4.35vw" />
-<BotaoVoltar destino="/" />
+<BotaoVoltar
+  destino={idIndicacaoUso == 'null'
+    ? $url('/listagemplantas', { rename: origemListagemRename.toString() })
+    : $url('/plantasIndicacao', { idIndicacaoUso: idIndicacaoUso })}
+/>
 
 <!-- svelte-ignore a11y_missing_attribute -->
 <img
@@ -87,15 +94,22 @@
     border: 10px solid rgb(53, 65, 40);
   }
 
+  .imagem:hover {
+    transform: scale(1.02);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+  }
+
   .container {
-    margin-left: 3.5px;
+    margin: 16px auto;
   }
 
   .opcoesNovaPagina {
+    margin-left: 0.5vw;
     margin-top: 15px;
     font-size: 2.54vh;
     color: #354128;
     font-family: Verdana, Geneva, sans-serif;
     font-weight: 700;
+    cursor: pointer;
   }
 </style>

@@ -17,31 +17,45 @@
     flex-basis: 20%;
     width: 155px;
     background-color: rgba(52, 64, 40, 1);
-    border-top-left-radius: 35px;
-    border-top-right-radius: 35px;
-    border-bottom-left-radius: 35px;
-    border-bottom-right-radius: 35px;
+    border-radius: 35px;
     display: flex;
-    color: rgba(255, 255, 255, 1);
+    color: #fff;
     font-family: Verdana, Geneva, sans-serif;
-    font-size: 16.31px;
+    font-size: 14px;
     text-align: center;
     flex-direction: column;
     align-items: center;
-    height: 135px;
+    height: 140px;
+    padding: 12px 0;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      background 0.3s ease;
+    text-decoration: none;
   }
 
   .menu-item:hover {
-    transform: scale(1.05);
+    transform: translateY(-4px) scale(1.06);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.35);
   }
 
-  img {
-    width: 67.9px;
-    align-items: flex-end;
-    margin-top: 9px;
+  .menu-item img {
+    width: 68px;
+    height: 68px;
+    object-fit: contain;
+    margin-top: 6px;
+    transition: transform 0.2s ease;
+  }
+
+  .menu-item:hover img {
+    transform: scale(1.15) rotate(5deg);
   }
 
   .label {
-    line-height: 1.2;
+    line-height: 1.3;
+    margin-top: 8px;
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
   }
 </style>

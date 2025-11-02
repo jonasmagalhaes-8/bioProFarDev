@@ -21,7 +21,11 @@
 
   onMount(async () => {
     plantas = await controllerListagemPlantas(rename ? 'SIM' : null, !rename ? 'SIM' : null)
-    descricaoListagemPlantas = rename ? 'Lista de fitoterápicos inclusos na RENAME:' : 'Lista ReniSUS:'
+    if (plantas.length > 0) {
+      descricaoListagemPlantas = rename ? 'Lista de fitoterápicos inclusos na RENAME:' : 'Lista ReniSUS:'
+    } else {
+      descricaoListagemPlantas = 'Sem plantas cadastradas'
+    }
   })
 
   // 2. Variável reativa/derivada para a lista filtrada
@@ -53,34 +57,43 @@
 </div>
 
 {#each plantasFiltradas as planta}
-  <ListagemPlantaItem {planta} />
+  <ListagemPlantaItem {planta} origemListagemRename={rename} idIndicacaoUso={null} />
 {/each}
 
 <style>
-  .fonteDestaque {
-    font-size: 3.6vh;
-    color: #354128;
-    font-family: Verdana, Geneva, sans-serif;
-    font-weight: 600;
-  }
-
-  .link {
-    color: #2461ae;
-    font-family: Verdana, Geneva, sans-serif;
-    font-size: 2vh;
-  }
-
-  .fonteDescricao {
-    font-size: 1.9vh;
-    color: #354128;
-    font-family: Verdana, Geneva, sans-serif;
-    font-weight: 400;
-    line-height: 16px;
-  }
-
   #container {
     flex-basis: 100%;
     margin-left: 10px;
     margin-right: 3.64px;
+  }
+
+  .fonteDestaque {
+    font-size: 3.6vh;
+    color: #2e3b1f;
+    font-family: Verdana, Geneva, sans-serif;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .fonteDescricao {
+    font-size: 2vh;
+    color: #3f4a2c;
+    font-family: Verdana, Geneva, sans-serif;
+    font-weight: 400;
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .link {
+    color: #3d7dd9;
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 2vh;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .link:hover {
+    color: #1a4fa0;
+    text-decoration: underline;
   }
 </style>
