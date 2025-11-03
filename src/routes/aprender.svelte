@@ -5,9 +5,11 @@
   // Nenhum script adicional necessário, tudo é estático
 </script>
 
-<BarraTopo titulo={'Aprenda a usar o aplicativo'}></BarraTopo>
-<div>
+<BarraTopo titulo={'Aprenda a usar o aplicativo'}>
   <BotaoVoltar destino={'/'} />
+</BarraTopo>
+
+<div>
   <div id="container">
     <div class="fonteTituloTopico">Objetivo do APP</div>
     <div class="fonteDescricaoTopico">Texto informando objetivo do APP</div>
@@ -30,18 +32,19 @@
   }
 
   .fonteDescricaoTopico {
-    font-size: 2.44vh;
+    font-size: 2.15vh;
     color: #3f4a2c;
     font-family: Verdana, Geneva, sans-serif;
     font-weight: 400;
     line-height: 1.6;
-    margin-bottom: 32px;
+    margin-bottom: 16px;
   }
 
   #container {
     flex-basis: 100%;
     margin-left: 20px;
     margin-right: 20px;
+    margin-top: 10px;
     padding-top: 0px;
     padding-right: 0px;
     padding-bottom: 0px;

@@ -1,5 +1,4 @@
 <script lang="ts">
-  export let backgroundColor: string
   export let texto: string
 
   // 1. Variável reativa para o termo de pesquisa
@@ -7,7 +6,7 @@
   export let termoPesquisa: string = ''
 </script>
 
-<div class="top-bar" style="background-color: {backgroundColor}">
+<div class="top-bar">
   <input type="text" placeholder={'🔍 ' + texto} bind:value={termoPesquisa} />
 </div>
 
@@ -16,23 +15,25 @@
   .top-bar {
     display: flex;
     align-items: center;
-    height: 8.5vh;
+    height: 6.3vh;
+    margin-top: 4.5px;
     justify-content: center;
-    padding: 0 10px;
+    padding: 0 6px;
     box-sizing: border-box;
   }
 
   .top-bar input {
-    margin-top: 12px;
     width: 100%;
     max-width: 500px;
     height: 5vh;
-    border-radius: 10px;
+    border-radius: 15px;
     border: none;
     font-size: 16.5px;
-    padding: 0 5px;
-    box-sizing: border-box;
+    padding: 0 15px;
     background-color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    font-family: 'Roboto', sans-serif;
   }
   .top-bar input:focus {
     box-shadow:

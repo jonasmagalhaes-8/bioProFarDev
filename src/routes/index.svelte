@@ -21,13 +21,13 @@
     {
       img: 'https://cdn.grapesjs.com/workspaces/cmbrza1zt1qs08tm31bcj18yg/assets/61661f38-3b09-4ab1-8221-00b723a435d9__modo-de-preparo.png',
       label: 'Modos de<br>preparo',
-      to: '/modos-preparo',
+      to: '/listagem-modos-preparo',
     },
-    {
+    /* {
       img: 'https://cdn.grapesjs.com/workspaces/cmbrza1zt1qs08tm31bcj18yg/assets/44145c9c-40eb-454c-b55c-9f2022a94174__favoritos.png',
       label: 'Lista de<br>favoritados',
       to: '/favoritos',
-    },
+    },*/
     {
       img: 'https://cdn.grapesjs.com/workspaces/cmbrza1zt1qs08tm31bcj18yg/assets/9f3ab1af-0c69-4334-a51c-dc94ef58d612__como-utilizar.png',
       label: 'Aprenda a usar o aplicativo',

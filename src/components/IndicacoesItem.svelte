@@ -29,28 +29,30 @@
 <style>
   .botaoOpcoes {
     color: rgba(255, 255, 255, 1);
-    font-family:
-      Lucida Sans Unicode,
-      Lucida Grande,
-      sans-serif;
-    font-size: 3.1vh;
+    font-family: 'Lucida Sans Unicode', 'Lucida Grande', sans-serif;
+    font-size: 3.5vh;
+    font-weight: 700;
     display: flex;
-    flex-direction: row;
-    justify-content: flex-end;
-    font-weight: 600;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .tamanhoLinhaItem {
-    width: 23vw;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 40px;
   }
 
   .tituloItem {
     flex: 0.93;
-    font-size: 2.3vh;
+    font-size: 2.2vh;
     font-family: Verdana, Geneva, sans-serif;
     font-weight: 500;
     color: #fff;
     line-height: 1.2;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
   }
   .imagem {
     color: black;
@@ -71,21 +73,24 @@
   .linhaItem:hover .botaoOpcoes {
     transform: translateX(4px);
   }
-
   .linhaItem {
     display: flex;
     align-items: center;
     height: 8.5vh;
-    margin-top: 10px;
+    min-height: 70px;
+    margin-top: 12px;
+    margin-left: 8px;
+    margin-right: 8px;
     padding: 0 7px;
     background-color: #929e77;
-    border-radius: 4.5px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-    transition:
-      transform 0.2s ease,
-      box-shadow 0.2s ease,
-      background 0.3s ease;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     text-decoration: none;
     color: #fff;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    animation: slideInRight 0.5s ease-out backwards;
   }
 </style>

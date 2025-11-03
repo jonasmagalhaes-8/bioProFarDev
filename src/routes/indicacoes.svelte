@@ -5,6 +5,7 @@
   import { controllerListagemIndicacoesUso } from '@/controllers/indicacoesUsoController'
   import { IndicacaoUso } from '@/models/IndicacaoUso'
   import { onMount } from 'svelte'
+  import BarraTopo from '@/components/BarraTopo.svelte'
 
   let indicacoesUso: IndicacaoUso[] = [] // Inicializa como array vazio para evitar erros
   let descricaoBuscaIndicacoes: string = 'Carregando Indicações...'
@@ -28,8 +29,11 @@
   })
 </script>
 
-<BarraDePesquisa texto={descricaoBuscaIndicacoes} backgroundColor={'#929e77'} bind:termoPesquisa />
-<BotaoVoltarHome destino={'/'} />
+<BarraTopo>
+  <BotaoVoltarHome destino={'/'} />
+  <BarraDePesquisa texto={descricaoBuscaIndicacoes} bind:termoPesquisa />
+</BarraTopo>
+
 {#each indicacoesUsoFiltradas as item}
   <MenuIndicacoes indicacao={item} />
 {/each}

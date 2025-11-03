@@ -1,5 +1,8 @@
 {
   "appId": "com.bioprofar.app",
   "appName": "bioProFar",
-  "webDir": "dist/client"
+  "webDir": "dist/client",
+  "ios": {
+    "bundleId": "com.bioprofar.app"
+  }
 }

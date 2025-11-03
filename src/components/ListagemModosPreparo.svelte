@@ -1,30 +1,24 @@
 <script lang="ts">
-  import { Planta } from '@/models/Planta'
+  import { MetodoPreparo } from '@/models/MetodoPreparo'
   import { url } from '@roxi/routify'
 
-  export let planta: Planta
-  export let origemListagemRename: boolean
-  export let idIndicacaoUso: Number
-  export let idModoPreparo: Number
+  export let modoPreparo: MetodoPreparo
 </script>
 
 <a
-  href={$url('/paginaPlanta', {
-    id: planta.idPlanta.toString(),
-    rename: origemListagemRename != null ? origemListagemRename.toString() : null,
-    idIndicacaoUso: idIndicacaoUso != null ? idIndicacaoUso.toString() : null,
-    idModoPreparo: idModoPreparo != null ? idModoPreparo.toString() : null,
+  href={$url('/modo-preparo', {
+    id: modoPreparo.idMetodoPreparo.toString(),
   })}
-  class="itemPlanta"
+  class="itemModoPreparo"
 >
-  <div class="textoPlanta">{planta.nome}</div>
+  <div class="textoModoPreparo">{modoPreparo.descricaoMetodo}</div>
   <div class="containerNavegacao">
     <div class="botao">→</div>
   </div>
 </a>
 
 <style>
-  .itemPlanta {
+  .itemModoPreparo {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -42,27 +36,27 @@
     animation: slideIn 0.5s ease-out backwards;
   }
 
-  .itemPlanta:hover {
+  .itemModoPreparo:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
     background: linear-gradient(120deg, #a1b07d, #7a8863);
   }
 
-  .itemPlanta:hover::before {
+  .itemModoPreparo:hover::before {
     left: 100%;
   }
 
-  .itemPlanta:hover {
+  .itemModoPreparo:hover {
     transform: translateX(8px) translateY(-3px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
     background: linear-gradient(120deg, #8a9873, #b1c08d);
   }
 
-  .itemPlanta:active {
+  .itemModoPreparo:active {
     transform: translateX(4px) translateY(-1px);
   }
 
-  .textoPlanta {
+  .textoModoPreparo {
     font-size: 2.2vh;
     color: #fff;
     font-family: Verdana, Geneva, sans-serif;
@@ -87,7 +81,7 @@
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .itemPlanta:hover .botao {
+  .itemModoPreparo:hover .botao {
     transform: translateX(5px);
   }
 </style>

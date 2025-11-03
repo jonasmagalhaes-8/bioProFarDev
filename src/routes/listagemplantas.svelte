@@ -6,6 +6,7 @@
   import BotaoVoltar from '@/components/BotaoVoltar.svelte'
   import { Planta } from '@/models/Planta'
   import { controllerListagemPlantas } from '@/controllers/plantaController'
+  import BarraTopo from '@/components/BarraTopo.svelte'
 
   const rename: boolean = $params.rename === 'true'
   const titulo: string = rename ? 'O que é a RENAME?' : 'O que é a lista ReniSUS?'
@@ -43,8 +44,11 @@
   })
 </script>
 
-<BarraDePesquisa texto="Buscar Planta" backgroundColor="#929e77" bind:termoPesquisa />
-<BotaoVoltar destino={'/'} />
+<BarraTopo>
+  <BotaoVoltar destino="/" />
+  <BarraDePesquisa texto="Buscar Planta" bind:termoPesquisa />
+</BarraTopo>
+
 <div id="container">
   <div class="fonteDestaque">{titulo}</div>
   <div class="fonteDescricao">
@@ -57,14 +61,15 @@
 </div>
 
 {#each plantasFiltradas as planta}
-  <ListagemPlantaItem {planta} origemListagemRename={rename} idIndicacaoUso={null} />
+  <ListagemPlantaItem {planta} origemListagemRename={rename} idIndicacaoUso={null} idModoPreparo={null} />
 {/each}
 
 <style>
   #container {
     flex-basis: 100%;
     margin-left: 10px;
-    margin-right: 3.64px;
+    margin-right: 10px;
+    margin-top: 10px;
   }
 
   .fonteDestaque {
@@ -78,18 +83,23 @@
   .fonteDescricao {
     font-size: 2vh;
     color: #3f4a2c;
-    font-family: Verdana, Geneva, sans-serif;
+    font-family: 'Roboto', Verdana, Geneva, sans-serif;
     font-weight: 400;
-    line-height: 1.6;
     margin-bottom: 16px;
+    background: rgba(255, 255, 255, 0.4);
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
 
   .link {
     color: #3d7dd9;
-    font-family: Verdana, Geneva, sans-serif;
+    font-family: 'Roboto', Verdana, Geneva, sans-serif;
     font-size: 2vh;
     text-decoration: none;
-    transition: color 0.2s ease;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    position: relative;
   }
 
   .link:hover {

@@ -6,6 +6,7 @@
   import BotaoVoltar from '@/components/BotaoVoltar.svelte'
   import { Planta } from '@/models/Planta'
   import { controllerListagemPlantas } from '@/controllers/plantaController'
+  import BarraTopo from '@/components/BarraTopo.svelte'
 
   const idIndicacaoUso: Number = Number.parseInt($params.idIndicacaoUso)
 
@@ -40,11 +41,13 @@
   })
 </script>
 
-<BarraDePesquisa texto={descricaoBuscaPlantas} backgroundColor="#929e77" bind:termoPesquisa />
-<BotaoVoltar destino={'/indicacoes'} />
+<BarraTopo>
+  <BotaoVoltar destino={'/indicacoes'} />
+  <BarraDePesquisa texto={descricaoBuscaPlantas} bind:termoPesquisa />
+</BarraTopo>
 
 {#each plantasFiltradas as planta}
-  <ListagemPlantaItem {planta} origemListagemRename={null} {idIndicacaoUso} />
+  <ListagemPlantaItem {planta} origemListagemRename={null} {idIndicacaoUso} idModoPreparo={null} />
 {/each}
 
 <style>

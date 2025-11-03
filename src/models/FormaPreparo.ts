@@ -5,8 +5,10 @@ export class FormaPreparo {
     idFormaPreparo: number;
     planta: Planta;
     metodoPreparo: MetodoPreparo;
-    partePlanta: string;
-    posologia: string;
-    referencia: string;
+    tipo: string;
+    composicaoConcentracao: string;
     constaRename: string;
+    referencia: string;
+    posologiaCaseiro: string;
+    partePlantaCaseiro: string;
 }

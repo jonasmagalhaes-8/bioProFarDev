@@ -1,12 +1,26 @@
 <script lang="ts">
-  // importa o próprio componente para permitir recursão
   import Accordion from './Accordion.svelte'
+  import { url } from '@roxi/routify'
 
   export let titulo: string | null = null
   export let texto: string | null = null
   export let link: string | null = null
-  export let filhos = [] // lista de sub-accordions
+  export let rota: string | null = null // exemplo: '/modo-preparo'
+  export let params: Record<string, any> | null = null // exemplo: { id: 3 }
+  export let filhos = []
+
   const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
+
+  function destino() {
+    if (rota) return $url(rota, params ?? {})
+    return link // fallback para link externo
+  }
+
+  // Define o texto do link dinamicamente
+  function textoLink() {
+    if (rota) return 'Toque aqui para saber mais sobre esse método de preparo'
+    return 'Link'
+  }
 </script>
 
 <details class="espacamento">
@@ -26,8 +40,10 @@
       <div>{@html texto}</div>
     {/if}
 
-    {#if link}
-      <a class="linkItem" href={link} target="_blank" rel="noopener noreferrer"> Link </a>
+    {#if link || rota}
+      <a class="linkItem" href={destino()} target={link ? '_blank' : '_self'} rel="noopener noreferrer">
+        {textoLink()}
+      </a>
     {/if}
 
     {#if filhos.length > 0}
@@ -40,8 +56,22 @@
 
 <style>
   .espacamento {
-    margin-left: 3.5px;
-    margin-top: 6px;
+    margin-top: 12.5px;
+  }
+
+  .linkItem {
+    color: #354128;
+    font-size: 1.97vh;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    display: inline-block;
+    margin-top: 2px;
+  }
+
+  .linkItem:hover {
+    text-decoration: underline;
+    transform: translateX(3px);
   }
 
   .expansaoAccordion {
@@ -50,7 +80,6 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    transition: background 0.3s ease;
   }
 
   .botaoExpandirAccordion {
@@ -60,23 +89,40 @@
     transition: transform 0.2s ease-in-out;
   }
 
+  details,
+  summary {
+    -webkit-tap-highlight-color: transparent; /* Android/Chrome */
+    -moz-tap-highlight-color: transparent; /* Firefox Mobile (não sempre necessário) */
+  }
+
+  .botaoExpandirAccordion svg {
+    pointer-events: none;
+  }
+
   .tituloAccordion {
-    font-size: 2.54vh;
+    font-size: 2vh;
     color: #354128;
     font-weight: 700;
   }
 
-  .textoAccordion {
-    --font-size: 2.44vh;
-    font-size: 1.97vh;
-    color: #354128;
-    font-weight: 400;
-    align-self: center;
-    padding: 0px 2.5px;
-    border-top: 1.5px solid #d0d4c0;
+  details[open] .botaoExpandirAccordion {
+    transform: rotate(180deg);
   }
 
-  .linkItem {
-    font-size: 1.97vh;
+  details {
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 15px;
+    margin-right: 6.5px;
+    padding: 8.5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+
+  .textoAccordion {
+    font-size: 1.85vh;
+    color: #354128;
+    font-weight: 400;
+    padding: 0px 2.5px;
+    border-top: 1.5px solid #d0d4c0;
   }
 </style>

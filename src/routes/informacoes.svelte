@@ -27,8 +27,9 @@
   ]
 </script>
 
-<BarraTopo titulo={'Informações Adicionais'} />
-<BotaoVoltar destino={'/'} />
+<BarraTopo titulo="Informações Adicionais">
+  <BotaoVoltar destino="/" />
+</BarraTopo>
 
 <div id="container">
   {#each itens as item}
