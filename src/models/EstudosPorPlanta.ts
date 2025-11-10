@@ -7,6 +7,4 @@ export class EstudosPorPlanta {
     planta: Planta;
 
     estudoCientifico: EstudoCientifico;
-
-    resumoSimplificado: string;
 }

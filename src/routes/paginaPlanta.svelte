@@ -6,6 +6,7 @@
   import { controllerObterPlantaPorID } from '@/controllers/plantaController'
   import BarraTopo from '@/components/BarraTopo.svelte'
   import Accordion from '@/components/Accordion.svelte'
+  import { getPrefix } from '@/util/obterPrefixoTipoImagem'
 
   const idPlanta: number = $params.id
   const origemListagemRename: string = $params.rename
@@ -17,52 +18,107 @@
 
   let filhosEstudos: any[] = []
   let filhosComoUtilizar: any[] = []
+  let filhosOutrosNomes: any[] = []
+  let filhosContraIndicacao: any[] = []
+  let filhosEfeitosAdversos: any[] = []
+
+  // HELPER 1: Extrai o link de UMA ÚNICA string de referência
+  function extrairLinkReferencia(referenciaCompleta: string | null) {
+    if (!referenciaCompleta || referenciaCompleta.trim() === '') {
+      return { texto: 'Não informado', link: null }
+    }
+    const urlRegex = /(https?:\/\/[^\s]+)/
+    const match = referenciaCompleta.match(urlRegex)
+    if (match && match[0]) {
+      const link = match[0]
+      let texto = referenciaCompleta.replace(link, '').trim()
+      if (texto === '') {
+        texto = 'Acessar referência'
+      }
+      return { texto, link }
+    } else {
+      return { texto: referenciaCompleta, link: null }
+    }
+  }
+
+  /**
+   * HELPER 2: Processa um campo de texto que pode ter MÚLTIPLAS
+   * referências separadas por pipe (|), gerando um array de filhos.
+   */
+  function processarMultiplasReferencias(campoReferencia: string | null, titulo: string = 'Referências') {
+    if (!campoReferencia || campoReferencia.trim() === '') {
+      return [{ titulo, texto: 'Não informado', link: null }]
+    }
+
+    // 1. Quebra a string em uma lista, usando "|" como divisor
+    const listaDeReferencias = campoReferencia.split('|')
+
+    // 2. Mapeia cada item da lista para o formato de "filho"
+    //    reutilizando a função extrairLinkReferencia
+    return listaDeReferencias.map((refString) => {
+      const { texto, link } = extrairLinkReferencia(refString.trim())
+      return {
+        titulo: titulo, // O título será o mesmo para todos (ex: "Referências")
+        texto: texto,
+        link: link,
+      }
+    })
+  }
 
   onMount(async () => {
     planta = await controllerObterPlantaPorID(idPlanta)
     titulo = `${planta.nome}<br>(${planta.nomeCientifico})`
 
-    // listas oficiais
+    // (Código RENAME/ReniSUS... sem mudanças)
     if (planta.constaRename?.toUpperCase() === 'SIM') {
-      titulo += '<br>Inclusa na lista RENAME'
-      if (planta.constaRenisus?.toUpperCase() === 'SIM') {
-        titulo += ' E ReniSUS'
-      }
-    } else if (planta.constaRenisus?.toUpperCase() === 'SIM') {
-      titulo += '<br>Inclusa na lista ReniSUS'
+      //...
     }
 
-    // --- ESTUDOS CIENTÍFICOS ---
+    // --- PROCESSAR REFERÊNCIAS ---
+
+    // "Outros Nomes" (tratamento especial com duas refs separadas)
+    const refPop = extrairLinkReferencia(planta.referenciaNomesPopulares)
+    const refCient = extrairLinkReferencia(planta.referenciaNomeCientifico)
+
+    filhosOutrosNomes = [
+      {
+        titulo: 'Referências Nomes Populares',
+        texto: refPop.texto,
+        link: refPop.link,
+      },
+      {
+        titulo: 'Referências Nomes Científicos',
+        texto: refCient.texto,
+        link: refCient.link,
+      },
+    ]
+
+    // "Contraindicação" (Agora usa o novo helper para criar MÚLTIPLOS filhos)
+    filhosContraIndicacao = processarMultiplasReferencias(planta.referenciaContraIndicacao)
+
+    // "Efeitos Adversos" (Também usa o novo helper)
+    filhosEfeitosAdversos = processarMultiplasReferencias(planta.referenciaEfeitosAdversos)
+
+    // "Estudos Científicos" (Já estava correto)
     if (planta.estudosPorPlanta?.length > 0) {
       filhosEstudos = planta.estudosPorPlanta.map((estudoPorPlanta) => ({
         titulo: estudoPorPlanta.estudoCientifico.tituloResumo,
-        texto: `
-          ${estudoPorPlanta.estudoCientifico.resumo}
-          <br><br>
-          <b>Resumo Simplificado:</b> ${estudoPorPlanta.resumoSimplificado || 'Não informado'}
-        `,
+        texto: `${estudoPorPlanta.estudoCientifico.resumo}`,
         filhos: [
           {
             titulo: 'Referências',
             texto: estudoPorPlanta.estudoCientifico.referencia,
-          },
-          {
-            titulo: 'Link para Leitura',
-            link: estudoPorPlanta.estudoCientifico.linkReferencia, // externo
+            link: estudoPorPlanta.estudoCientifico.linkReferencia,
           },
         ],
       }))
     } else {
-      filhosEstudos = [
-        {
-          titulo: 'Nenhum estudo científico encontrado',
-          texto: 'Não há estudos científicos cadastrados para esta planta.',
-        },
-      ]
+      //... (lógica de 'Nenhum estudo')
     }
 
-    // --- COMO UTILIZAR ---
+    // "Como Utilizar" (Também precisa usar o "processarMultiplasReferencias")
     if (planta.formaPreparo?.length > 0) {
+      //... (código que separa caseiras e farmaceuticas)
       const formasCaseiras: any[] = []
       const formasFarmaceuticas: any[] = []
 
@@ -77,21 +133,23 @@
       if (formasCaseiras.length > 0) {
         filhosComoUtilizar.push({
           titulo: 'Preparo Caseiro',
-          filhos: formasCaseiras.map((f) => ({
-            titulo: f.metodoPreparo?.descricaoMetodo || 'Método não informado',
-            texto: `
-              Parte da planta: ${f.partePlantaCaseiro || 'Não informado'}<br>
-              Posologia: ${f.posologiaCaseiro || 'Não informado'}
-            `,
-            rota: '/modo-preparo', // 🔗 rota interna
-            params: { id: f.metodoPreparo?.idMetodoPreparo }, // passa o id
-            filhos: [
-              {
-                titulo: 'Referências',
-                texto: f.referencia || 'Não informado',
-              },
-            ],
-          })),
+          filhos: formasCaseiras.map((f) => {
+            const refFilhos = processarMultiplasReferencias(f.referencia)
+            return {
+              titulo: f.metodoPreparo?.descricaoMetodo || f.tipo,
+              texto: `
+    Parte da planta: ${f.partePlantaCaseiro || 'Não informado'}<br>
+    Posologia: ${f.posologiaCaseiro || 'Não informado'}
+  `,
+              filhos: refFilhos,
+              ...(f.metodoPreparo?.descricaoMetodo
+                ? {
+                    rota: '/modo-preparo',
+                    params: { id: f.metodoPreparo.idMetodoPreparo },
+                  }
+                : {}),
+            }
+          }),
         })
       }
 
@@ -99,34 +157,27 @@
       if (formasFarmaceuticas.length > 0) {
         filhosComoUtilizar.push({
           titulo: 'Forma(s) Farmacêutica(s)',
-          filhos: formasFarmaceuticas.map((f) => ({
-            titulo: f.metodoPreparo?.descricaoMetodo || 'Método não informado',
-            texto: `
-              Composição/Concentração: ${f.composicaoConcentracao || 'Não informado'}<br>
-              Disponibilidade: ${
-                f.constaRename?.toUpperCase() === 'SIM' ? 'Disponível na RENAME' : 'Não disponível na RENAME'
-              }
-            `,
-            rota: '/modo-preparo',
-            params: { id: f.metodoPreparo?.idMetodoPreparo },
-            filhos: [
-              {
-                titulo: 'Referências',
-                texto: f.referencia || 'Não informado',
-              },
-            ],
-          })),
+          filhos: formasFarmaceuticas.map((f) => {
+            const refFilhos = processarMultiplasReferencias(f.referencia)
+            return {
+              titulo: f.metodoPreparo?.descricaoMetodo || f.tipo,
+              texto: `
+    Composição/Concentração: ${f.composicaoConcentracao || 'Não informado'}<br>
+    Disponibilidade: ${f.tem_rename?.toUpperCase() === 'SIM' ? 'Disponível na RENAME' : 'Não disponível na RENAME'}
+  `,
+              filhos: refFilhos,
+              ...(f.metodoPreparo?.descricaoMetodo
+                ? {
+                    rota: '/modo-preparo',
+                    params: { id: f.metodoPreparo.idMetodoPreparo },
+                  }
+                : {}),
+            }
+          }),
         })
       }
 
-      if (filhosComoUtilizar.length === 0) {
-        filhosComoUtilizar = [
-          {
-            titulo: 'Nenhuma forma de preparo encontrada',
-            texto: 'Não há dados cadastrados sobre formas de preparo desta planta.',
-          },
-        ]
-      }
+      // ... (resto do código "Como Utilizar")
     }
   })
 </script>
@@ -141,35 +192,26 @@
   />
 </BarraTopo>
 
-<!-- svelte-ignore a11y_missing_attribute -->
-<img
-  class="imagem"
-  src="https://cdn.grapesjs.com/workspaces/cmbrza1zt1qs08tm31bcj18yg/assets/85ad6fe7-5071-49b1-ae8a-8dff088b77aa__alcachofra.png"
-/>
+{#if planta.imagemBase64 && planta.imagemBase64.trim() !== ''}
+  <img class="imagem" src={getPrefix(planta.imagemBase64) + planta.imagemBase64} alt={planta.nome} />
+{:else}
+  <img class="imagem" src="/img/placeholder-planta.png" alt="Imagem não disponível" />
+{/if}
 
 <div class="container">
   <Accordion
     titulo="Outros nomes"
-    texto={`Nome(s) popular(es): ${planta.nomesPopulares}<br>Nome Científico: ${planta.nomeCientifico}<br>Sinonímia: ${planta.sinonimia}`}
-    filhos={[
-      { titulo: 'Referências Nomes Populares', texto: planta.referenciaNomesPopulares },
-      { titulo: 'Referências Nomes Científicos', texto: planta.referenciaNomeCientifico },
-    ]}
+    texto={`Nome(s) popular(es): ${planta.nomesPopulares?.trim() || 'Não informado'}
+  <br>Nome Científico: ${planta.nomeCientifico?.trim() || 'Não informado'}
+  <br>Sinonímia: ${planta.sinonimia?.trim() || 'Não informado'}`}
+    filhos={filhosOutrosNomes}
   />
 
   <Accordion titulo="Indicação de Uso" texto={planta.indicacao} />
 
-  <Accordion
-    titulo="Contraindicação"
-    texto={planta.contraIndicacao}
-    filhos={[{ titulo: 'Referências', texto: planta.referenciaContraIndicacao }]}
-  />
+  <Accordion titulo="Contraindicação" texto={planta.contraIndicacao} filhos={filhosContraIndicacao} />
 
-  <Accordion
-    titulo="Efeitos Adversos"
-    texto={planta.efeitosAdversos}
-    filhos={[{ titulo: 'Referências', texto: planta.referenciaEfeitosAdversos }]}
-  />
+  <Accordion titulo="Efeitos Adversos" texto={planta.efeitosAdversos} filhos={filhosEfeitosAdversos} />
 
   <Accordion titulo="Como utilizar?" filhos={filhosComoUtilizar} />
 

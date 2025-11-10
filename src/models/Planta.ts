@@ -10,6 +10,7 @@ export class Planta {
   nomesPopulares: string | null = "";
   referenciaNomesPopulares: string | null;
   imagem: string | null = "";
+  imagemBase64: string | null = "";
   linkImagem: string | null;
   constaRename: string | null;
   constaRenisus: string | null;
