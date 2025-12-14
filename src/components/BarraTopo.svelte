@@ -23,17 +23,28 @@
     padding: 4px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     animation: slideDown 0.6s ease-out;
+
+    /* FIX: Ensure this doesn't exceed screen width */
+    width: 100%;
+    box-sizing: border-box; /* Essential so padding:4px doesn't overflow */
   }
 
   .titulo {
     margin-left: 10px;
     font-family: Verdana, Geneva, sans-serif;
     color: rgba(255, 255, 255, 1);
+
+    /* FIX: Handle long scientific names on small screens */
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.2; /* Tighten line height for multi-line titles */
+    padding-right: 10px; /* Prevent text from hitting the right edge */
   }
 
   .conteudo {
     display: flex;
-    flex-direction: column; /* 👈 muda para coluna */
-    width: 100%;
+    flex-direction: column;
+    /* Removed 'width: 100%' - flex items auto-fill space, forcing 100% can cause overflow */
+    flex: 1;
   }
 </style>

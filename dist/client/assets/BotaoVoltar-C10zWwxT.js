@@ -1,1 +1,0 @@
-import{d as r,f as i,c as l,r as v,t as d,b as c,g as f}from"./index-BRzh14zm.js";var p=i('<div class="navegacao svelte-eiwhz1"><a class="botao svelte-eiwhz1">←</a></div>');function h(t,e){let s=r(e,"destino",8);var a=p(),o=l(a);v(a),d(()=>f(o,"href",s())),c(t,a)}export{h as B};

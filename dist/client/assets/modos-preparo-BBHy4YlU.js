@@ -1,1 +1,0 @@
-import{f as r,b as e}from"./index-BRzh14zm.js";var p=r('<div class="page svelte-qn9itg"><h1 class="svelte-qn9itg">Modos de preparo</h1> <p>Rota: /modos-preparo</p> <a href="/">⬅ Voltar</a></div>');function t(o){var a=p();e(o,a)}export{t as default};

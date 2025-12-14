@@ -1,5 +1,6 @@
 import { MetodoPreparo } from './MetodoPreparo';
 import { Planta } from './Planta';
+import { UsuarioModel } from './UsuarioModel';
 
 export class FormaPreparo {
     idFormaPreparo: number;
@@ -11,4 +12,6 @@ export class FormaPreparo {
     referencia: string;
     posologiaCaseiro: string;
     partePlantaCaseiro: string;
+    usuario: UsuarioModel;
+    dataEdicao: string;
 }

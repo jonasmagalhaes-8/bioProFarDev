@@ -1,6 +1,36 @@
-  body {
-    --margin-top: 3.27vh;
-    margin-top: 4vh;
-    background-color: #dde1c8;
-    font-family: Verdana, Geneva, sans-serif;
-  }
+:global(*) {
+  box-sizing: border-box; /* Fixes the padding adding to width issue */
+}
+
+:global(body) {
+  /* Reset default browser margins that cause overflow */
+  margin: 0;
+  padding: 0;
+
+  /* Your existing styles */
+  --margin-top: 3.27vh;
+  margin-top: 4vh; /* Be careful: this pushes content down. Ensure top-nav is fixed or handles this */
+  background-color: #dde1c8;
+  font-family: Verdana, Geneva, sans-serif;
+
+  /* "Nuclear" protection against horizontal scroll on mobile */
+  overflow-x: hidden;
+  width: 100%;
+}
+
+body {
+  --margin-top: 3.27vh;
+  margin-top: 4vh;
+  background-color: #dde1c8;
+  font-family: Verdana, Geneva, sans-serif;
+}
+
+button {
+  background: linear-gradient(120deg, #7a8863, #a1b07d);
+  border-radius: 15px;
+  border-width: 0px;
+}
+
+a {
+  color: #7a8863;
+}

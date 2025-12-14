@@ -1,6 +1,9 @@
 <script>
-  import BarraDePesquisa from '@/components/BarraDePesquisa.svelte'
   import MenuItem from '@/components/HomeItem.svelte'
+  import Splash from '@/components/Splash.svelte'
+  import { usuarioStore } from '@/store'
+  import { goto } from '@roxi/routify'
+  import { onMount } from 'svelte'
 
   const menuItems = [
     {
@@ -23,11 +26,11 @@
       label: 'Modos de<br>preparo',
       to: '/listagem-modos-preparo',
     },
-    /* {
+    {
       img: 'https://cdn.grapesjs.com/workspaces/cmbrza1zt1qs08tm31bcj18yg/assets/44145c9c-40eb-454c-b55c-9f2022a94174__favoritos.png',
       label: 'Lista de<br>favoritados',
       to: '/favoritos',
-    },*/
+    },
     {
       img: 'https://cdn.grapesjs.com/workspaces/cmbrza1zt1qs08tm31bcj18yg/assets/9f3ab1af-0c69-4334-a51c-dc94ef58d612__como-utilizar.png',
       label: 'Aprenda a usar o aplicativo',
@@ -38,8 +41,32 @@
       label: 'Informações<br>Adicionais',
       to: '/informacoes',
     },
+    {
+      img: 'https://cdn.grapesjs.com/workspaces/cmbrza1zt1qs08tm31bcj18yg/assets/bda252b9-ab62-4061-b57d-7263572a10ad__mais-informaes.png',
+      label: 'Configuração',
+      to: '/configuracao',
+    },
   ]
+
+  let splashVisivel = $state(sessionStorage.getItem('splashVisivel') == null ? true : false)
+
+  onMount(() => {
+    const usuarioStorage = localStorage.getItem('usuario')
+
+    if (usuarioStorage == null || usuarioStorage == '') {
+      $goto('/login')
+    }
+
+    usuarioStore.set(JSON.parse(usuarioStorage))
+
+    setTimeout(() => {
+      splashVisivel = false
+      sessionStorage.setItem('splashVisivel', 'false')
+    }, 2000)
+  })
 </script>
+
+<Splash imgSrc="path/to/image.jpg" visibilidade={splashVisivel} />
 
 <div class="divider"></div>
 

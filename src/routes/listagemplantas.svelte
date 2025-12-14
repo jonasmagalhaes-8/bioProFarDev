@@ -60,6 +60,7 @@
   </div>
 </div>
 
+<a href={`/criar-planta?rename=${rename}`} class="criar-planta"> Criar planta </a>
 {#each plantasFiltradas as planta}
   <ListagemPlantaItem {planta} origemListagemRename={rename} idIndicacaoUso={null} idModoPreparo={null} />
 {/each}
@@ -105,5 +106,19 @@
   .link:hover {
     color: #1a4fa0;
     text-decoration: underline;
+  }
+
+  .criar-planta {
+    background: linear-gradient(120deg, #7a8863, #a1b07d);
+    border-radius: 15px;
+    margin: 10px 10px 12px 10px;
+    cursor: pointer;
+    color: white;
+    display: block;
+    text-align: center;
+    padding: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    font-size: 2.2vh;
+    color: #fff;
   }
 </style>

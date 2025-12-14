@@ -20,7 +20,10 @@
     "@capacitor/cli": "^7.4.3",
     "@capacitor/core": "^7.4.3",
     "@capacitor/ios": "^7.4.3",
+    "@lucide/svelte": "^0.554.0",
     "axios": "^1.12.2",
+    "gerador-validador-cpf": "^6.3.0",
+    "imask": "^7.6.1",
     "spank": "^2.2.4"
   }
 }

@@ -1,5 +1,7 @@
 import { EstudosPorPlanta } from './EstudosPorPlanta';
 import { FormaPreparo } from './FormaPreparo';
+import { IndicacaoUso } from './IndicacaoUso';
+import { UsuarioModel } from './UsuarioModel';
 
 export class Planta {
   idPlanta: number;
@@ -20,9 +22,11 @@ export class Planta {
   contraIndicacao: string | null = "";
   referenciaContraIndicacao: string | null = "";
   estudosPorPlanta: EstudosPorPlanta[] | null;
+  indicacoesPlanta: IndicacaoUso[] | null;
   formaPreparo: FormaPreparo[] | null;
   resumoTrabalhos: string | null;
-
+  usuario: UsuarioModel;
+  dataEdicao: string;
   constructor(obj: Partial<Planta> = {}) {
     Object.assign(this, obj);
   }
