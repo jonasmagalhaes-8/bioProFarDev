@@ -156,7 +156,12 @@
     <fieldset>
       <legend>Indicações</legend>
 
-      <Input keyboardType="default" bind:value={planta.indicacao} style="margin-bottom: 10px;" />
+      <Input
+        keyboardType="default"
+        placeholder="Insira aqui um Resumo"
+        bind:value={planta.indicacao}
+        style="margin-bottom: 10px;"
+      />
 
       <MultiSelectDropdown
         options={indicacoes.map((indicacao) => ({
@@ -261,9 +266,7 @@
     </fieldset>
 
     <fieldset>
-      <legend>Como utilizar</legend>
-
-      <button on:click={() => (modalComoUtilizar = true)}>Abrir modal</button>
+      <button on:click={() => (modalComoUtilizar = true)}>Definir Como Utilizar</button>
 
       {#if modalComoUtilizar}
         <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -363,8 +366,7 @@
     </fieldset>
 
     <fieldset>
-      <legend>Estudos Científicos</legend>
-      <button on:click={() => (modalEstudosCientifico = true)}>Abrir modal</button>
+      <button on:click={() => (modalEstudosCientifico = true)}>Definir Estudos Científicos</button>
 
       {#if modalEstudosCientifico}
         <!-- svelte-ignore a11y_click_events_have_key_events -->
