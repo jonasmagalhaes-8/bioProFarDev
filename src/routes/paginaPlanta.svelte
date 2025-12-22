@@ -4,8 +4,10 @@
   import BotaoVoltar from '@/components/BotaoVoltar.svelte'
   import {
     controllerAtualizarImagem,
+    controllerAtualizarPlanta,
     controllerDeletarPorId,
     controllerObterPlantaPorID,
+    controllerFavoritarPlanta, // Adicionado
   } from '@/controllers/plantaController'
   import BarraTopo from '@/components/BarraTopo.svelte'
   import Accordion from '@/components/Accordion.svelte'
@@ -13,8 +15,10 @@
   import { FormaPreparo } from '@/models/FormaPreparo'
   import { Planta } from '@/models/Planta'
   import { EstudosPorPlanta } from '@/models/EstudosPorPlanta'
+  // IMPORTANTE: Importar o novo Model
+  import { IndicacaoPlantaModel } from '@/models/IndicacaoPlantaModel'
   import { usuarioStore } from '@/store'
-  import { LucideEdit3, LucideTrash } from '@lucide/svelte'
+  import { LucideEdit3, LucideTrash, LucidePlus, LucideCheck, LucideStar } from '@lucide/svelte' // Adicionado LucideStar
   import Input from '@/components/Input.svelte'
   import MultiSelectDropdown from '@/components/MultiSelectDropdown.svelte'
   import { controllerListagemIndicacoesUso } from '@/controllers/indicacoesUsoController'
@@ -22,6 +26,8 @@
   import { IndicacaoUso } from '@/models/IndicacaoUso'
   import { MetodoPreparo } from '@/models/MetodoPreparo'
   import Apagar from '@/components/Apagar.svelte'
+  import { toast } from '@zerodevx/svelte-toast'
+  import { get } from 'svelte/store'
 
   let irPara: any
   $: irPara = $goto
@@ -34,26 +40,26 @@
   let indicacoes: IndicacaoUso[] = []
   let modosPreparo: MetodoPreparo[] = []
 
+  // Variável temporária para controlar o MultiSelectDropdown
+  // O Dropdown seleciona 'Indicações', mas a planta salva 'IndicacaoPlantaModel'
+  let indicacoesSelecionadasDropdown: number[] = []
+
   let planta: Planta = new Planta()
   let plantaReferencia: Planta = new Planta()
 
   let fileInput: HTMLInputElement
 
   // --- ESTADO DO MODAL ---
-  let modalAberto:
-    | 'nomes'
-    | 'indicacao'
-    | 'contraindicacao'
-    | 'efeitos'
-    | 'estudos'
-    | 'formasPreparo'
-    | 'comoUtilizar'
-    | null = null
+  let modalAberto: 'nomes' | 'indicacao' | 'contraindicacao' | 'efeitos' | 'estudos' | 'comoUtilizar' | null = null
   let refsEmEdicao: string[] = []
   let itemEmEdicao: any = null
   let indexEmEdicao: number | null = null
 
   let modalDeletar = false
+
+  // Sub-modais para adicionar/editar
+  let modalComoUtilizarAdicionar = false
+  let modalEstudosCientificoAdicionar = false
 
   // --- HELPERS (sem mudanças) ---
   function extrairLinkReferencia(referenciaCompleta: string | null) {
@@ -74,7 +80,7 @@
     }
   }
 
-  function processarMultiplasReferencias(campoReferencia: string | null, titulo: string = 'Referências') {
+  function processarMultiplasReferencias(campoReferencia: string | null, titulo: string = 'Referência') {
     if (!campoReferencia || campoReferencia.trim() === '') {
       return [{ titulo, texto: 'Não informado', link: null }]
     }
@@ -89,7 +95,7 @@
     })
   }
 
-  // --- DECLARAÇÕES REATIVAS ($:) (sem mudanças) ---
+  // --- DECLARAÇÕES REATIVAS ($:) ---
   $: titulo = planta.nome ? `${planta.nome}<br>(${planta.nomeCientifico})` : 'Carregando Planta...'
   $: filhosOutrosNomes = planta.idPlanta
     ? [
@@ -180,45 +186,96 @@
   // --- LÓGICA DE MONTAGEM E AÇÕES ---
 
   async function loadPlanta() {
-    planta = await controllerObterPlantaPorID(idPlanta)
-    plantaReferencia = planta
+    planta = await controllerObterPlantaPorID(idPlanta, $usuarioStore.idUsuario)
+    // Deep Clone simples para garantir que referências nested não sejam alteradas diretamente
+    plantaReferencia = JSON.parse(JSON.stringify(planta))
   }
 
-  onMount(async () => {
-    await loadPlanta()
-    if ($usuarioStore.usuarioAdmin) {
-      try {
-        const response = await controllerListagemIndicacoesUso()
-        indicacoes = response
-      } catch (error) {
-        alert('Erro ao carregar indicações de uso.')
-      }
+  let imagem: File | undefined
+  let imagemPreview: string = ''
 
-      try {
-        const response = await controllerListagemModosPreparo()
-        modosPreparo = response
-      } catch (error) {
-        alert('Erro ao carregar métodos de preparo.')
-      }
+  onMount(async () => {
+    const usuarioStorage = localStorage.getItem('usuario')
+
+    if (usuarioStorage != null && usuarioStorage == '') {
+      usuarioStore.set(JSON.parse(usuarioStorage))
+    }
+
+    await loadPlanta()
+    try {
+      const response = await controllerListagemIndicacoesUso()
+      indicacoes = response
+    } catch (error) {
+      alert('Erro ao carregar indicações de uso.')
+    }
+
+    try {
+      const response = await controllerListagemModosPreparo()
+      modosPreparo = response
+    } catch (error) {
+      alert('Erro ao carregar métodos de preparo.')
     }
   })
 
-  function abrirModal(
-    tipo: 'nomes' | 'indicacao' | 'contraindicacao' | 'efeitos' | 'estudos' | 'formasPreparo' | 'comoUtilizar' | null,
-  ) {
-    modalAberto = tipo
-    itemEmEdicao = null
-    indexEmEdicao = null
-    if (tipo === 'contraindicacao') {
-      refsEmEdicao = (planta.referenciaContraIndicacao || '').split('|').filter((ref) => ref.trim() !== '')
-    } else if (tipo === 'efeitos') {
-      refsEmEdicao = (planta.referenciaEfeitosAdversos || '').split('|').filter((ref) => ref.trim() !== '')
-    } else {
-      refsEmEdicao = []
+  // --- NOVA FUNÇÃO DE FAVORITAR ---
+  async function toggleFavorito() {
+    const usuarioLogado = get(usuarioStore)
+
+    // Se não estiver logado, pergunta se deseja ir para o login
+    if (!usuarioLogado?.idUsuario) {
+      const desejaLogar = confirm(
+        'Funcionalidade disponível apenas para usuários logados, deseja ser redirecionado para fazer login ou cadastrar-se?',
+      )
+      if (desejaLogar) {
+        irPara('/login')
+      }
+      return
+    }
+
+    // Lógica original de favoritar
+    planta.plantaFavoritadaUsuario = !planta.plantaFavoritadaUsuario
+    planta = planta
+
+    try {
+      await controllerFavoritarPlanta(planta.idPlanta, usuarioLogado.idUsuario)
+    } catch (error) {
+      planta.plantaFavoritadaUsuario = !planta.plantaFavoritadaUsuario
+      planta = planta
+      alert('Erro ao atualizar favorito: ' + error.message)
     }
   }
 
-  // Funções do Editor de Referências (Simples)
+  function abrirModal(tipo: 'nomes' | 'indicacao' | 'contraindicacao' | 'efeitos' | 'estudos' | 'comoUtilizar' | null) {
+    modalAberto = tipo
+    itemEmEdicao = null
+    indexEmEdicao = null
+
+    switch (tipo) {
+      case 'indicacao':
+        if (planta.indicacoesPlanta && planta.indicacoesPlanta.length > 0) {
+          indicacoesSelecionadasDropdown = planta.indicacoesPlanta?.map((ip) => ip.indicacaoUso.idIndicacaoUso) ?? []
+        } else {
+          indicacoesSelecionadasDropdown = []
+        }
+        break
+
+      case 'contraindicacao':
+        refsEmEdicao = (planta.referenciaContraIndicacao || '').split('|').filter((ref) => ref.trim() !== '')
+        break
+      case 'efeitos':
+        refsEmEdicao = (planta.referenciaEfeitosAdversos || '').split('|').filter((ref) => ref.trim() !== '')
+        break
+      case 'estudos':
+        break
+      case 'comoUtilizar':
+        break
+      default:
+        refsEmEdicao = []
+        break
+    }
+  }
+
+  // ... (Funções de referências e formas de preparo mantidas iguais) ...
   function adicionarReferencia() {
     refsEmEdicao = [...refsEmEdicao, '']
   }
@@ -226,18 +283,22 @@
     refsEmEdicao = refsEmEdicao.filter((_, i) => i !== index)
   }
 
-  // --- Funções Mestre-Detalhe (Forma de Preparo) ---
   function editarFormaPreparo(forma: FormaPreparo, index: number) {
-    itemEmEdicao = { ...forma }
+    itemEmEdicao = { ...forma, referencias: (forma.referencia || '').split('|').filter((ref) => ref.trim() !== '') }
     indexEmEdicao = index
-    refsEmEdicao = (forma.referencia || '').split('|').filter((ref) => ref.trim() !== '')
+    modalComoUtilizarAdicionar = true
   }
 
   function adicionarFormaPreparo() {
-    itemEmEdicao = new FormaPreparo()
-    itemEmEdicao.tipo = 'CASEIRA'
+    itemEmEdicao = {
+      ...new FormaPreparo(),
+      tipo: 'CASEIRA',
+      metodoPreparo: new MetodoPreparo(),
+      referencias: [''],
+    }
+    itemEmEdicao.metodoPreparo.idMetodoPreparo = null
     indexEmEdicao = -1
-    refsEmEdicao = []
+    modalComoUtilizarAdicionar = true
   }
 
   function removerFormaPreparo(index: number) {
@@ -247,44 +308,43 @@
   }
 
   function salvarItemFormaPreparo() {
-    itemEmEdicao.referencia = refsEmEdicao.filter((ref) => ref.trim() !== '').join('|')
+    itemEmEdicao.referencia = itemEmEdicao.referencias.filter((ref) => ref.trim() !== '').join('|')
+
+    const { referencias, ...formaPreparoSemReferencias } = itemEmEdicao
+
     if (indexEmEdicao === -1) {
-      planta.formaPreparo = [...planta.formaPreparo, itemEmEdicao]
+      planta.formaPreparo = [...planta.formaPreparo, formaPreparoSemReferencias]
     } else {
       const listaAtualizada = [...planta.formaPreparo]
-      listaAtualizada[indexEmEdicao] = itemEmEdicao
+      listaAtualizada[indexEmEdicao] = formaPreparoSemReferencias
       planta.formaPreparo = listaAtualizada
     }
     itemEmEdicao = null
     indexEmEdicao = null
-    refsEmEdicao = []
+    modalComoUtilizarAdicionar = false
   }
 
-  // --- Funções Mestre-Detalhe (Estudos Científicos) ---
   function editarEstudo(estudo: EstudosPorPlanta, index: number) {
     itemEmEdicao = {
       ...estudo,
       estudoCientifico: { ...estudo.estudoCientifico },
     }
     indexEmEdicao = index
+    modalEstudosCientificoAdicionar = true
   }
 
-  // *** BUG CORRIGIDO AQUI ***
   function adicionarEstudo() {
-    // Precisamos criar o objeto com a ESTRUTURA COMPLETA que o formulário
-    // espera, senão o 'bind:value' falha em 'estudoCientifico'
     itemEmEdicao = {
-      // idEstudosPorPlanta: null, // (ou 0, dependendo do seu modelo)
       planta: { idPlanta: planta.idPlanta },
       estudoCientifico: {
-        // idEstudoCientifico: null, // (ou 0)
         tituloResumo: '',
         resumo: '',
         referencia: '',
         linkReferencia: '',
       },
     }
-    indexEmEdicao = -1 // Sinaliza que é um novo item
+    indexEmEdicao = -1
+    modalEstudosCientificoAdicionar = true
   }
 
   function removerEstudo(index: number) {
@@ -304,17 +364,21 @@
 
     itemEmEdicao = null
     indexEmEdicao = null
+    modalEstudosCientificoAdicionar = false
   }
 
   function cancelarItemEdicao() {
     itemEmEdicao = null
     indexEmEdicao = null
     refsEmEdicao = []
+    modalComoUtilizarAdicionar = false
+    modalEstudosCientificoAdicionar = false
   }
 
   async function onCancelar() {
     switch (modalAberto) {
       case 'nomes':
+        // Reverter campos simples
         planta.nome = plantaReferencia.nome
         planta.nomesPopulares = plantaReferencia.nomesPopulares
         planta.referenciaNomesPopulares = plantaReferencia.referenciaNomesPopulares
@@ -325,74 +389,97 @@
         planta.constaRenisus = plantaReferencia.constaRenisus
         break
       case 'indicacao':
+        // Reverter listas
         planta.indicacao = plantaReferencia.indicacao
-        planta.indicacoesPlanta = plantaReferencia.indicacoesPlanta
+        // Fazendo um parse/stringify para garantir nova referencia
+        planta.indicacoesPlanta = JSON.parse(JSON.stringify(plantaReferencia.indicacoesPlanta))
         break
       case 'contraindicacao':
         planta.contraIndicacao = plantaReferencia.contraIndicacao
         planta.referenciaContraIndicacao = plantaReferencia.referenciaContraIndicacao
         break
       case 'efeitos':
-        // Lógica para sair do modal de efeitos adversos
+        planta.efeitosAdversos = plantaReferencia.efeitosAdversos
+        planta.referenciaEfeitosAdversos = plantaReferencia.referenciaEfeitosAdversos
         break
       case 'estudos':
-        // Lógica para sair do modal de estudos científicos
-        break
-      case 'formasPreparo':
-        // Lógica para sair do modal de formas de preparo
+        planta.estudosPorPlanta = JSON.parse(JSON.stringify(plantaReferencia.estudosPorPlanta))
         break
       case 'comoUtilizar':
-        // Lógica para sair do modal de como utilizar
+        planta.formaPreparo = JSON.parse(JSON.stringify(plantaReferencia.formaPreparo))
         break
       default:
         break
     }
+
+    modalAberto = null
   }
 
   function openFilePicker() {
-    if (!$usuarioStore.usuarioAdmin) return
+    if (!$usuarioStore || !$usuarioStore.usuarioAdmin) return
     fileInput.click()
   }
 
   async function mudarImagemPlanta(e: Event & { currentTarget: HTMLInputElement }) {
     if (!e.currentTarget.files || e.currentTarget.files.length < 1) return
 
-    const imagem = e.currentTarget.files[0]
+    imagem = e.currentTarget.files[0]
 
-    try {
-      await controllerAtualizarImagem(planta.idPlanta, imagem)
-      await loadPlanta()
-    } catch (error) {
-      alert(error.message)
+    if (imagemPreview) {
+      URL.revokeObjectURL(imagemPreview)
     }
+
+    imagemPreview = URL.createObjectURL(imagem)
   }
 
   // --- Função Principal de SALVAR ---
   async function handleSave() {
     if (!planta) return
+
+    // Tratamento específico por modal antes de fechar
     if (modalAberto === 'contraindicacao') {
       planta.referenciaContraIndicacao = refsEmEdicao.filter((ref) => ref.trim() !== '').join('|')
     } else if (modalAberto === 'efeitos') {
       planta.referenciaEfeitosAdversos = refsEmEdicao.filter((ref) => ref.trim() !== '').join('|')
+    } else if (modalAberto === 'indicacao') {
+      // CONVERSÃO INVERSA: Lista Simples do Dropdown -> Modelo Complexo para o Backend
+      // Mapeia o array de IndicacaoUso selecionadas para IndicacaoPlantaModel
+      planta.indicacoesPlanta = indicacoesSelecionadasDropdown.map((idIndicacao) => {
+        const existente = plantaReferencia.indicacoesPlanta?.find(
+          (ip) => ip.indicacaoUso.idIndicacaoUso === idIndicacao,
+        )
+
+        if (existente) return existente
+
+        const indicacaoUso = indicacoes.find((i) => i.idIndicacaoUso === idIndicacao)
+
+        const nova = new IndicacaoPlantaModel()
+        nova.indicacaoUso = indicacaoUso!
+        return nova
+      })
     }
 
-    try {
-      // const plantaSalva = await controllerAtualizarPlanta(planta)
-      //planta = null
+    modalAberto = null
+    itemEmEdicao = null
+    indexEmEdicao = null
+    refsEmEdicao = []
+  }
 
-      planta.imagemBase64 = null
-      console.log(JSON.stringify(planta))
-      modalAberto = null
-      itemEmEdicao = null
-      indexEmEdicao = null
-      refsEmEdicao = []
-      alert('Planta atualizada com sucesso!')
+  async function salvarTudo() {
+    try {
+      await controllerAtualizarPlanta(planta)
+      if (imagem) {
+        await controllerAtualizarImagem(planta.idPlanta, imagem)
+      }
+      // Atualiza a referência após salvar com sucesso
+      plantaReferencia = JSON.parse(JSON.stringify(planta))
+      alert('Planta salva com sucesso!')
     } catch (error) {
-      console.error('Erro ao salvar:', error)
-      alert('Falha ao atualizar a planta.')
+      alert(error.message)
     }
   }
 
+  // ... (onDeletarPlanta mantido igual) ...
   async function onDeletarPlanta() {
     try {
       await controllerDeletarPorId(idPlanta)
@@ -401,11 +488,11 @@
         irPara('/plantasIndicacao', { idIndicacaoUso })
       } else if (idModoPreparo && idModoPreparo !== 'null') {
         irPara('/modo-preparo', { id: idModoPreparo })
-      } else {
-        // Tratamento seguro para evitar crash se 'origemListagemRename' for undefined
+      } else if (origemListagemRename !== 'null') {
         const valorRename = origemListagemRename ? origemListagemRename.toString() : 'true'
-
         irPara('/listagemplantas', { rename: valorRename })
+      } else {
+        irPara('/favoritos')
       }
     } catch (error) {
       alert(error.message)
@@ -419,12 +506,12 @@
       ? $url('/plantasIndicacao', { idIndicacaoUso })
       : idModoPreparo != 'null'
         ? $url('/modo-preparo', { id: idModoPreparo })
-        : $url('/listagemplantas', { rename: origemListagemRename.toString() })}
+        : origemListagemRename != 'null'
+          ? $url('/listagemplantas', { rename: origemListagemRename.toString() })
+          : $url('/favoritos')}
   />
 </BarraTopo>
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="topContainer">
   <div
     class="imagemContainer"
@@ -433,77 +520,87 @@
     tabindex="0"
     on:keydown={(e) => e.key == 'Enter' && openFilePicker()}
   >
-    {#if planta.imagemBase64 && planta.imagemBase64.trim() !== ''}
+    {#if imagemPreview}
+      <img src={imagemPreview} alt="Pré-visualização da imagem" class="imagem" />
+    {:else if planta.imagemBase64 && planta.imagemBase64.trim() !== ''}
       <img class="imagem" src={getPrefix(planta.imagemBase64) + planta.imagemBase64} alt={planta.nome} />
     {:else}
-      <img class="imagem" src="/img/placeholder-planta.png" alt="Imagem não disponível" />
+      <img class="imagem" src="/img/placeholder-planta.png" alt="Carregando Imagem..." />
     {/if}
-    <span>
-      <LucideEdit3 />
-    </span>
-    <input type="file" accept="image/*" bind:this={fileInput} on:change={mudarImagemPlanta} hidden />
+
+    {#if $usuarioStore && $usuarioStore.usuarioAdmin}
+      <span>
+        <LucideEdit3 />
+      </span>
+    {/if}
+    <input
+      type="file"
+      accept="image/jpeg,image/png,image/bmp,image/gif,.jpg,.jpeg,.png,.bmp,.gif"
+      bind:this={fileInput}
+      on:change={mudarImagemPlanta}
+      hidden
+    />
   </div>
 
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <div class="trash" on:click={() => (modalDeletar = true)}>
-    <LucideTrash color="#FF5555" />
-  </div>
+  {#if !modalAberto}
+    <div class="top-actions">
+      <div class="action-btn" on:click={toggleFavorito} title="Favoritar">
+        <LucideStar
+          color={planta.plantaFavoritadaUsuario ? '#FFD700' : '#808080'}
+          fill={planta.plantaFavoritadaUsuario ? '#FFD700' : 'none'}
+        />
+      </div>
+
+      {#if $usuarioStore && $usuarioStore.usuarioAdmin}
+        <div class="action-btn" on:click={() => (modalDeletar = true)} title="Apagar Planta">
+          <LucideTrash color="#FF5555" />
+        </div>
+      {/if}
+    </div>
+  {/if}
 </div>
 
 <div class="container">
   <div class="edit-section">
     <Accordion
-      titulo="Nomes"
+      titulo="Sobre a Planta"
       texto={`Nome(s) popular(es): ${planta.nomesPopulares?.trim() || 'Não informado'}
     <br>Nome Científico: ${planta.nomeCientifico?.trim() || 'Não informado'}
     <br>Sinonímia: ${planta.sinonimia?.trim() || 'Não informado'}`}
       filhos={filhosOutrosNomes}
     />
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    {#if $usuarioStore?.usuarioAdmin}
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <div class="edit-btn" on:click={() => abrirModal('nomes')}><LucideEdit3 color="black" size={20} /></div>
+    {#if $usuarioStore && $usuarioStore?.usuarioAdmin}
+      <div class="edit-btn" on:click={() => abrirModal('nomes')}><LucideEdit3 color="black" size={24.5} /></div>
     {/if}
   </div>
 
   <div class="edit-section">
     <Accordion titulo="Indicação de Uso" texto={planta.indicacao} />
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    {#if $usuarioStore?.usuarioAdmin}
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <div class="edit-btn" on:click={() => abrirModal('indicacao')}><LucideEdit3 color="black" size={20} /></div>
+    {#if $usuarioStore && $usuarioStore?.usuarioAdmin}
+      <div class="edit-btn" on:click={() => abrirModal('indicacao')}><LucideEdit3 color="black" size={24.5} /></div>
     {/if}
   </div>
 
   <div class="edit-section">
     <Accordion titulo="Contraindicação" texto={planta.contraIndicacao} filhos={filhosContraIndicacao} />
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    {#if $usuarioStore?.usuarioAdmin}
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <div class="edit-btn" on:click={() => abrirModal('contraindicacao')}><LucideEdit3 color="black" size={20} /></div>
+    {#if $usuarioStore && $usuarioStore?.usuarioAdmin}
+      <div class="edit-btn" on:click={() => abrirModal('contraindicacao')}>
+        <LucideEdit3 color="black" size={24.5} />
+      </div>
     {/if}
   </div>
 
   <div class="edit-section">
     <Accordion titulo="Efeitos Adversos" texto={planta.efeitosAdversos} filhos={filhosEfeitosAdversos} />
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    {#if $usuarioStore?.usuarioAdmin}
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <div class="edit-btn" on:click={() => abrirModal('efeitos')}><LucideEdit3 color="black" size={20} /></div>
+    {#if $usuarioStore && $usuarioStore?.usuarioAdmin}
+      <div class="edit-btn" on:click={() => abrirModal('efeitos')}><LucideEdit3 color="black" size={24.5} /></div>
     {/if}
   </div>
 
   <div class="edit-section">
     <Accordion titulo="Como utilizar?" filhos={filhosComoUtilizar} />
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    {#if $usuarioStore?.usuarioAdmin}
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <div class="edit-btn" on:click={() => abrirModal('comoUtilizar')}><LucideEdit3 color="black" size={20} /></div>
+    {#if $usuarioStore && $usuarioStore?.usuarioAdmin}
+      <div class="edit-btn" on:click={() => abrirModal('comoUtilizar')}><LucideEdit3 color="black" size={24.5} /></div>
     {/if}
   </div>
 
@@ -513,82 +610,67 @@
       texto={planta.resumoTrabalhos || 'Nenhum resumo disponível.'}
       filhos={filhosEstudos}
     />
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
     {#if $usuarioStore?.usuarioAdmin}
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <div class="edit-btn" on:click={() => abrirModal('estudos')}><LucideEdit3 color="black" size={20} /></div>
+      <div class="edit-btn" on:click={() => abrirModal('estudos')}><LucideEdit3 color="black" size={24.5} /></div>
     {/if}
   </div>
 </div>
 
-<!-- MODAIS DE EDIÇÃO -->
-
 {#if modalAberto}
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="modal" on:click={() => (modalAberto = null)}>
-    <div class="modal-content" on:click={(e) => e.stopPropagation()}>
+  <div class="modal" on:click={onCancelar}>
+    <div
+      style={modalAberto == 'indicacao' && 'overflow: visible'}
+      class="modal-content"
+      on:click={(e) => e.stopPropagation()}
+    >
       {#if modalAberto === 'nomes'}
         <div class="modal-body">
           <label for="nome-comum">Nome da Planta:</label>
           <Input keyboardType="default" bind:value={planta.nome} />
-
           <label for="nomesPopulares">Nomes Populares:</label>
           <Input keyboardType="default" bind:value={planta.nomesPopulares} />
-
           <label for="referenciaNomesPopulares">Referência Nomes Populares: (Única)</label>
           <Input keyboardType="default" bind:value={planta.referenciaNomesPopulares} />
-
           <label for="nome-cientifico">Nome Científico:</label>
           <Input keyboardType="default" bind:value={planta.nomeCientifico} />
-
           <label for="referenciaNomeCientifico">Referência Nome Científico: (Única)</label>
           <Input keyboardType="default" bind:value={planta.referenciaNomeCientifico} />
-
           <label for="sinonimia">Sinonimia:</label>
           <Input keyboardType="default" bind:value={planta.sinonimia} />
 
-          <label for="constaAonde">Consta aonde?</label>
-
           <div class="checkbox-container">
-            <label for="rename"
-              ><input
-                type="checkbox"
-                name="rename"
-                id="rename"
-                checked={planta.constaRename == 'SIM'}
-                on:change={(e) => {
-                  const { checked } = e.target as HTMLInputElement
-
-                  if (checked) {
-                    planta.constaRename = 'SIM'
-                  } else {
-                    planta.constaRename = 'NÃO'
-                  }
-                }}
-              />Rename</label
-            >
-          </div>
-
-          <div class="checkbox-container">
-            <label for="rename"
-              ><input
-                type="checkbox"
-                name="renisus"
-                id="renisus"
-                checked={planta.constaRenisus == 'SIM'}
-                on:change={(e) => {
-                  const { checked } = e.target as HTMLInputElement
-
-                  if (checked) {
-                    planta.constaRenisus = 'SIM'
-                  } else {
-                    planta.constaRenisus = 'NÃO'
-                  }
-                }}
-              />ReniSUS</label
-            >
+            <div class="checkbox-container">
+              <label for="rename"
+                ><input
+                  type="checkbox"
+                  name="rename"
+                  id="rename"
+                  checked={planta.constaRename == 'SIM'}
+                  on:change={(e) => {
+                    const { checked } = e.target as HTMLInputElement
+                    if (checked) planta.constaRename = 'SIM'
+                    else planta.constaRename = 'NÃO'
+                  }}
+                />Rename</label
+              >
+            </div>
+            <div class="checkbox-container">
+              <label for="rename"
+                ><input
+                  type="checkbox"
+                  name="renisus"
+                  id="renisus"
+                  checked={planta.constaRenisus == 'SIM'}
+                  on:change={(e) => {
+                    const { checked } = e.target as HTMLInputElement
+                    if (checked) planta.constaRenisus = 'SIM'
+                    else planta.constaRenisus = 'NÃO'
+                  }}
+                />ReniSUS</label
+              >
+            </div>
           </div>
         </div>
       {/if}
@@ -596,14 +678,18 @@
       {#if modalAberto === 'indicacao'}
         <div class="modal-body">
           <label for="indicacaoTxt">Indicação:</label>
-          <Input keyboardType="default" bind:value={planta.indicacao} style="margin-bottom: 10px;" />
-
+          <Input
+            keyboardType="default"
+            placeholder="Resumo de Indicações"
+            bind:value={planta.indicacao}
+            style="margin-bottom: 10px;"
+          />
           <MultiSelectDropdown
             options={indicacoes.map((indicacao) => ({
-              id: indicacao,
+              id: indicacao.idIndicacaoUso,
               value: indicacao.nomeIndicacao,
             }))}
-            bind:selected={planta.indicacoesPlanta}
+            bind:selected={indicacoesSelecionadasDropdown}
             placeholder="Selecione indicações..."
           />
         </div>
@@ -613,7 +699,6 @@
         <div class="modal-body">
           <label for="contraTxt">Contraindicação:</label>
           <Input keyboardType="default" bind:value={planta.contraIndicacao} />
-
           <label for="contraindicacoesreferencias">Referências:</label>
           {#each refsEmEdicao as ref, i}
             <div class="ref-editor-item">
@@ -628,20 +713,19 @@
       {/if}
 
       {#if modalAberto === 'efeitos'}
-        <h2 class="modal-header">Editar Efeitos Adversos</h2>
         <div class="modal-body">
-          <label for="efeitosTxt">Efeitos Adversos:</label>
-          <!-- svelte-ignore element_invalid_self_closing_tag -->
-          <textarea id="efeitosTxt" bind:value={planta.efeitosAdversos} />
-          <!-- svelte-ignore a11y_label_has_associated_control -->
-          <label>Referências:</label>
-          {#each refsEmEdicao as ref, i}
-            <div class="ref-editor-item">
-              <input type="text" bind:value={refsEmEdicao[i]} />
-              <button class="btn-remover-ref" on:click={() => removerReferencia(i)} title="Remover Referência"
-                >🗑️</button
-              >
-            </div>
+          <label for="efeitosAdversos">Efeitos Adversos:</label>
+          <Input keyboardType="default" bind:value={planta.efeitosAdversos} />
+          <label for="efeitosadversosreferencias">Referências:</label>
+          {#each refsEmEdicao as referencia, index}
+            <Input keyboardType="default" bind:value={refsEmEdicao[index]} />
+            {#if refsEmEdicao.length > 1}
+              <div>
+                <button class="btn-remover-ref" on:click={() => removerReferencia(index)} title="Remover Referência"
+                  ><LucideTrash /></button
+                >
+              </div>
+            {/if}
           {/each}
           <button class="btn-adicionar-ref" on:click={adicionarReferencia}>+ Adicionar Referência</button>
         </div>
@@ -649,106 +733,62 @@
 
       {#if modalAberto === 'comoUtilizar'}
         <div class="modal-body">
-          {#if itemEmEdicao === null}
-            <div class="mestre-lista">
-              {#each planta.formaPreparo as forma, i}
-                <div class="mestre-item">
-                  <span>{forma.metodoPreparo?.descricaoMetodo || ''} {forma.tipo} </span>
-                  <div class="mestre-item-botoes">
-                    <button class="btn-sub-editar" on:click={() => editarFormaPreparo(forma, i)} title="Editar"
-                      >✏️</button
-                    >
-                    <button class="btn-sub-remover" on:click={() => removerFormaPreparo(i)} title="Remover">🗑️</button>
-                  </div>
-                </div>
+          {#each planta.formaPreparo as forma, i}
+            <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 8px;">
+              <h4>{forma.metodoPreparo?.descricaoMetodo || forma.tipo}</h4>
+              <p><strong>Tipo:</strong> {forma.tipo}</p>
+              {#if forma.tipo === 'CASEIRA'}
+                <p><strong>Parte da Planta:</strong> {forma.partePlantaCaseiro || 'Não informado'}</p>
+                <p><strong>Posologia:</strong> {forma.posologiaCaseiro || 'Não informado'}</p>
               {:else}
-                <p>Nenhuma forma de preparo cadastrada.</p>
-              {/each}
-            </div>
-            <button class="btn-adicionar-ref" on:click={adicionarFormaPreparo}> + Nova Forma de Preparo </button>
-          {:else}
-            <label for="formaTipo">Tipo:</label>
-            <select id="formaTipo" bind:value={itemEmEdicao.tipo}>
-              <option value="CASEIRA">Caseira</option>
-              <option value="FARMACEUTICA">Farmacêutica</option>
-            </select>
-
-            {#if itemEmEdicao.tipo === 'CASEIRA'}
-              <label for="formaParte">Parte da Planta:</label>
-              <input id="formaParte" type="text" bind:value={itemEmEdicao.partePlantaCaseiro} />
-              <label for="formaPosologia">Posologia (Caseira):</label>
-              <!-- svelte-ignore element_invalid_self_closing_tag -->
-              <textarea id="formaPosologia" bind:value={itemEmEdicao.posologiaCaseiro} />
-            {:else}
-              <label for="formaComp">Composição/Concentração:</label>
-              <input id="formaComp" type="text" bind:value={itemEmEdicao.composicaoConcentracao} />
-              <label for="formaRename">Tem na RENAME?</label>
-              <select id="formaRename" bind:value={itemEmEdicao.tem_rename}>
-                <option value="NAO">Não</option>
-                <option value="SIM">Sim</option>
-              </select>
-            {/if}
-
-            <!-- svelte-ignore a11y_label_has_associated_control -->
-            <label>Referências:</label>
-            {#each refsEmEdicao as ref, i}
-              <div class="ref-editor-item">
-                <input type="text" bind:value={refsEmEdicao[i]} />
-                <button class="btn-remover-ref" on:click={() => removerReferencia(i)} title="Remover Referência"
-                  >🗑️</button
-                >
+                <p><strong>Composição:</strong> {forma.composicaoConcentracao || 'Não informado'}</p>
+                <p><strong>RENAME:</strong> {forma.constaRename || 'Não informado'}</p>
+              {/if}
+              <div style="display: flex; justify-content: end;">
+                <button class="btn-editar-item" on:click={() => editarFormaPreparo(forma, i)}>Editar</button>
+                <button class="btn-remover-item" on:click={() => removerFormaPreparo(i)}>Remover</button>
               </div>
-            {/each}
-            <button class="btn-adicionar-ref" on:click={adicionarReferencia}>+ Adicionar Referência</button>
-
-            <div class="modal-sub-footer">
-              <button class="btn-sub-cancelar" on:click={cancelarItemEdicao}>Cancelar Edição</button>
-              <button class="btn-sub-salvar" on:click={salvarItemFormaPreparo}>Salvar Item</button>
             </div>
-          {/if}
+          {:else}
+            <p>Nenhuma forma de preparo cadastrada.</p>
+          {/each}
+          <button class="btn-adicionar-ref" on:click={adicionarFormaPreparo}>+ Nova Forma de Preparo</button>
         </div>
       {/if}
 
       {#if modalAberto === 'estudos'}
         <div class="modal-body">
           <label for="estudosResumo">Resumo Geral dos Trabalhos:</label>
-          <!-- svelte-ignore element_invalid_self_closing_tag -->
-          <textarea id="estudosResumo" bind:value={planta.resumoTrabalhos} />
+          <textarea
+            id="estudosResumo"
+            bind:value={planta.resumoTrabalhos}
+            style="width: 100%; min-height: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit;"
+          ></textarea>
 
-          {#if itemEmEdicao === null}
-            <div class="mestre-lista">
-              {#each planta.estudosPorPlanta as estudo, i}
-                <div class="mestre-item">
-                  <span>{estudo.estudoCientifico.tituloResumo || 'Estudo sem título'}</span>
-                  <div class="mestre-item-botoes">
-                    <button class="btn-sub-editar" on:click={() => editarEstudo(estudo, i)} title="Editar">✏️</button>
-                    <button class="btn-sub-remover" on:click={() => removerEstudo(i)} title="Remover">🗑️</button>
-                  </div>
-                </div>
-              {:else}
-                <p>Nenhum estudo cadastrado.</p>
-              {/each}
+          {#each planta.estudosPorPlanta as estudo, i}
+            <div
+              style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; margin-top: 10px; border-radius: 8px;"
+            >
+              <h4>{estudo.estudoCientifico.tituloResumo || 'Estudo sem título'}</h4>
+              <p>{estudo.estudoCientifico.resumo}</p>
+              <p><strong>Referência:</strong> {estudo.estudoCientifico.referencia}</p>
+              {#if estudo.estudoCientifico.linkReferencia}
+                <p>
+                  <strong>Link:</strong>
+                  <a href={estudo.estudoCientifico.linkReferencia} target="_blank"
+                    >{estudo.estudoCientifico.linkReferencia}</a
+                  >
+                </p>
+              {/if}
+              <div style="display: flex; justify-content: end;">
+                <button class="btn-editar-item" on:click={() => editarEstudo(estudo, i)}>Editar</button>
+                <button class="btn-remover-item" on:click={() => removerEstudo(i)}>Remover</button>
+              </div>
             </div>
-            <button class="btn-adicionar-ref" on:click={adicionarEstudo}> + Novo Estudo </button>
           {:else}
-            <label for="estudoTitulo">Título/Resumo:</label>
-            <input id="estudoTitulo" type="text" bind:value={itemEmEdicao.estudoCientifico.tituloResumo} />
-
-            <label for="estudoResumo">Resumo Completo:</label>
-            <!-- svelte-ignore element_invalid_self_closing_tag -->
-            <textarea id="estudoResumo" bind:value={itemEmEdicao.estudoCientifico.resumo} />
-
-            <label for="estudoRefTexto">Referência (Texto):</label>
-            <input id="estudoRefTexto" type="text" bind:value={itemEmEdicao.estudoCientifico.referencia} />
-
-            <label for="estudoRefLink">Link da Referência:</label>
-            <input id="estudoRefLink" type="text" bind:value={itemEmEdicao.estudoCientifico.linkReferencia} />
-
-            <div class="modal-sub-footer">
-              <button class="btn-sub-cancelar" on:click={cancelarItemEdicao}>Cancelar Edição</button>
-              <button class="btn-sub-salvar" on:click={salvarItemEstudo}>Salvar Item</button>
-            </div>
-          {/if}
+            <p>Nenhum estudo cadastrado.</p>
+          {/each}
+          <button class="btn-adicionar-ref" on:click={adicionarEstudo}>+ Novo Estudo</button>
         </div>
       {/if}
 
@@ -759,6 +799,122 @@
         </div>
       {/if}
     </div>
+  </div>
+{/if}
+
+{#if modalComoUtilizarAdicionar && itemEmEdicao}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="modal" on:click={() => cancelarItemEdicao()}>
+    <div class="modal-content" on:click={(e) => e.stopPropagation()}>
+      <h3>{indexEmEdicao === -1 ? 'Nova Forma de Preparo' : 'Editar Forma de Preparo'}</h3>
+
+      <label for="tipoComoUtilizar">Tipo:</label>
+      <select name="tipoComoUtilizar" id="tipoComoUtilizar" bind:value={itemEmEdicao.tipo}>
+        <option value="CASEIRA">CASEIRA</option>
+        <option value="FARMACEUTICA">FARMACÊUTICA</option>
+      </select>
+
+      {#if itemEmEdicao.tipo === 'CASEIRA'}
+        <div>
+          <label for="parteDaPlanta">Parte da Planta:</label>
+          <Input keyboardType="default" bind:value={itemEmEdicao.partePlantaCaseiro} />
+
+          <label for="metodoPreparo">Método de Preparo:</label>
+          <select name="metodoPreparo" id="metodoPreparo" bind:value={itemEmEdicao.metodoPreparo}>
+            <option value={null} disabled selected>Selecione o método de preparo</option>
+            {#each modosPreparo as metodo}
+              <option value={metodo}>{metodo.descricaoMetodo}</option>
+            {/each}
+          </select>
+        </div>
+      {:else}
+        <div>
+          <label for="composicaoEConcentracao">Composição/Concentração:</label>
+          <Input keyboardType="default" bind:value={itemEmEdicao.composicaoConcentracao} />
+
+          <label for="temNaRename">Tem na Rename?</label>
+          <select name="temNaRename" id="temNaRename" bind:value={itemEmEdicao.tem_rename}>
+            <option value="SIM">SIM</option>
+            <option value="NAO">NÃO</option>
+          </select>
+        </div>
+      {/if}
+
+      <label for="posologia">Posologia:</label>
+      <Input keyboardType="default" bind:value={itemEmEdicao.posologiaCaseiro} />
+
+      <label for="referenciasFormaPreparo">Referências:</label>
+      <div class="referenciaContainer">
+        {#each itemEmEdicao.referencias as referencia, index}
+          <Input keyboardType="default" bind:value={itemEmEdicao.referencias[index]} />
+          {#if itemEmEdicao.referencias.length > 1}
+            <div>
+              <button
+                class="btn-remover-ref-modal"
+                on:click={() => (itemEmEdicao.referencias = itemEmEdicao.referencias.filter((_, i) => i !== index))}
+              >
+                Remover referência
+              </button>
+            </div>
+          {/if}
+        {/each}
+      </div>
+
+      <div class="referenciaBotoes">
+        <div>
+          <button
+            class="referenciaBotao"
+            on:click={() => (itemEmEdicao.referencias = [...itemEmEdicao.referencias, ''])}
+          >
+            <LucidePlus />
+          </button>
+          <button class="referenciaBotao" on:click={salvarItemFormaPreparo}>
+            <LucideCheck />
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+{#if modalEstudosCientificoAdicionar && itemEmEdicao}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="modal" on:click={() => cancelarItemEdicao()}>
+    <div class="modal-content" on:click={(e) => e.stopPropagation()}>
+      <h3>{indexEmEdicao === -1 ? 'Novo Estudo' : 'Editar Estudo'}</h3>
+
+      <label for="tituloResumo">Título/Resumo:</label>
+      <Input keyboardType="default" bind:value={itemEmEdicao.estudoCientifico.tituloResumo} />
+
+      <label for="detalhesEstudo">Resumo Completo:</label>
+      <textarea
+        id="detalhesEstudo"
+        bind:value={itemEmEdicao.estudoCientifico.resumo}
+        style="width: 100%; min-height: 100px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit;"
+      ></textarea>
+
+      <label for="referenciaEstudo">Referência (Texto):</label>
+      <Input keyboardType="default" bind:value={itemEmEdicao.estudoCientifico.referencia} />
+
+      <label for="linkReferencia">Link da Referência:</label>
+      <Input keyboardType="default" bind:value={itemEmEdicao.estudoCientifico.linkReferencia} />
+
+      <div class="referenciaBotoes">
+        <div>
+          <button class="referenciaBotao" on:click={salvarItemEstudo}>
+            <LucideCheck />
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+{#if $usuarioStore && $usuarioStore?.usuarioAdmin}
+  <div style="display:  flex; justify-content: end;">
+    <button style="margin-right: 20px;" on:click={salvarTudo}>Salvar Alterações</button>
   </div>
 {/if}
 
@@ -785,7 +941,7 @@
   .imagemContainer {
     position: relative;
     display: flex;
-    width: 65%;
+    width: 88%;
   }
 
   .imagemContainer span {
@@ -800,19 +956,42 @@
     border-radius: 100%;
   }
 
-  .topContainer .trash {
+  /* NOVO CSS PARA O GRUPO DE AÇÕES (LIXEIRA E ESTRELA) */
+  .top-actions {
     position: absolute;
     right: 10px;
     top: 10px;
-    background: none;
-    border: none;
-    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 10;
   }
+
+  .action-btn {
+    background: rgba(255, 255, 255, 0.85); /* Fundo sutil para melhor leitura sobre imagens */
+    border-radius: 50%;
+    padding: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition:
+      transform 0.2s,
+      background-color 0.2s;
+  }
+
+  .action-btn:hover {
+    transform: scale(1.1);
+    background: white;
+  }
+
+  /* Removemos o estilo antigo .topContainer .trash e substituímos pela classe acima */
 
   .imagem {
     display: block;
     margin: 7px 0;
-    width: 65%;
+    width: 88%;
     border-radius: 35px;
     border: 10px solid rgb(53, 65, 40);
     transition:
@@ -825,14 +1004,14 @@
   }
   .container {
     margin: 0 auto;
-    padding-bottom: 30px;
+    padding-bottom: 7.5px;
   }
   .edit-section {
     position: relative;
   }
   .edit-btn {
     position: absolute;
-    top: 11px;
+    top: 6.5px;
     right: 50px;
     border-style: none;
     border-radius: 50%;
@@ -842,68 +1021,130 @@
     background: #e0e0e0;
   }
 
-  /* --- Estilos do Modal (sem mudança) --- */
-  .modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  .modal-content {
-    position: fixed;
-    top: 29.5%;
-    left: 29.5%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 8px;
-    border-radius: 10px;
-    z-index: 100;
-    width: 55.7%;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    max-height: 85vh;
-  }
-  .modal-header {
-    margin-top: 0;
+  /* --- Estilos do Modal Principal --- */
 
-    border-bottom: 1px solid #eee;
-  }
-
-  .modal-body input[type='text'],
   .modal-body textarea,
-  .modal-body select {
-    width: 100%;
-    padding: 4.5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-family: inherit;
-    font-size: 1.03rem;
-  }
-
   .modal-footer {
     padding-top: 5px;
     border-top: 1px solid #eee;
     display: flex;
     justify-content: flex-end;
   }
+
   .modal-footer button {
     border-radius: 5px;
     border: none;
     cursor: pointer;
     font-weight: bold;
+    padding: 8px 16px;
   }
+
   .modal-footer .btn-cancel {
     background-color: #f1f1f1;
     margin-right: 10px;
   }
+
   .modal-footer .btn-save {
     background-color: rgb(53, 65, 40);
     color: white;
+  }
+
+  /* --- Estilos do Sub-Modal (NOVO) --- */
+  .modal {
+    position: fixed;
+    top: 10px;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    padding-top: 20px;
+    /* Centralização Universal */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    z-index: 9999; /* Garante que fique acima de tudo */
+  }
+
+  .modal-content {
+    /* Remova position: fixed, top, left e transform daqui */
+    background: white;
+    padding: 16px;
+    border-radius: 10px;
+
+    /* Largura responsiva */
+    width: 90%;
+    max-width: 500px; /* Ajuste conforme seu design original (55.7%) */
+
+    /* Altura e Scroll */
+    max-height: 100vh;
+    overflow-y: auto; /* Só mostra scroll se o conteúdo for maior que a tela */
+    -webkit-overflow-scrolling: touch; /* Suavidade no iOS */
+
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  }
+
+  .referenciaContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .referenciaBotoes {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 15px;
+  }
+
+  .referenciaBotoes div {
+    display: flex;
+    gap: 10px;
+  }
+
+  .referenciaBotao {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #7a8863;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+  }
+
+  .referenciaBotao:hover {
+    background-color: #6a7553;
+  }
+
+  /* --- Botões de Ação nos Itens --- */
+  .btn-editar-item,
+  .btn-remover-item {
+    padding: 6px 12px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    margin-right: 8px;
+  }
+
+  .btn-editar-item {
+    background-color: #2196f3;
+    color: white;
+  }
+
+  .btn-editar-item:hover {
+    background-color: #1976d2;
+  }
+
+  .btn-remover-item {
+    background-color: #f44336;
+    color: white;
+  }
+
+  .btn-remover-item:hover {
+    background-color: #d32f2f;
   }
 
   .btn-remover-ref {
@@ -911,90 +1152,51 @@
     align-items: center;
     justify-content: center;
     margin-top: 5px;
+    padding: 6px 12px;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .btn-remover-ref:hover {
+    background-color: #d32f2f;
+  }
+
+  .btn-remover-ref-modal {
+    background-color: #f44336;
+    color: white;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 5px;
+  }
+
+  .btn-remover-ref-modal:hover {
+    background-color: #d32f2f;
   }
 
   .btn-adicionar-ref {
     background-color: rgb(53, 65, 40);
     border: none;
     border-radius: 5px;
-
+    color: white;
     cursor: pointer;
-
     width: 100%;
     font-weight: bold;
-  }
-
-  .mestre-lista {
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    max-height: 200px;
-    overflow-y: auto;
-    margin-bottom: 10px;
-  }
-  .mestre-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     padding: 10px;
-    border-bottom: 1px solid #eee;
-  }
-  .mestre-item:last-child {
-    border-bottom: none;
-  }
-  .mestre-item span {
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-right: 10px;
-  }
-  /* Estilo dos botões de ícone Mestre-Detalhe */
-  .mestre-item-botoes button {
-    margin-left: 5px;
-    padding: 0; /* Removido padding */
-    font-size: 1rem; /* Tamanho do ícone */
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    width: 30px; /* Largura fixa */
-    height: 30px; /* Altura fixa */
-    line-height: 30px; /* Centralizar ícone */
-    text-align: center;
-  }
-  .btn-sub-editar {
-    background-color: #2196f3; /* Azul */
-    color: white;
-  }
-  .btn-sub-remover {
-    background-color: #f44336; /* Vermelho */
-    color: white;
+    margin-top: 10px;
   }
 
-  /* Rodapé do formulário de sub-edição */
-  .modal-sub-footer {
-    margin-top: 25px;
-    padding-top: 15px;
-    border-top: 1px solid #eee;
-    display: flex;
-    justify-content: flex-end;
+  .btn-adicionar-ref:hover {
+    background-color: rgb(43, 55, 30);
   }
-  .modal-sub-footer button {
-    padding: 0px 8px;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-    font-weight: bold;
-  }
-  .btn-sub-cancelar {
-    background-color: #f1f1f1;
-    margin-right: 10px;
-  }
-  .btn-sub-salvar {
-    background-color: #4caf50; /* Verde */
-    color: white;
-  }
+
   .checkbox-container {
     display: flex;
+    gap: 10px;
     flex-direction: row;
     align-items: center;
   }
@@ -1005,5 +1207,11 @@
 
   .checkbox-container label input {
     margin-right: 5px;
+  }
+
+  button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 </style>

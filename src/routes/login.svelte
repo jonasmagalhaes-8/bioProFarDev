@@ -70,14 +70,17 @@
       const response = await controllerLoginUsuario(usuario)
       localStorage.setItem('usuario', JSON.stringify(response))
       irPara('/')
-    } catch (error) {
-      error = error.message
+    } catch (err) {
+      if (err instanceof Error) {
+        error = err.message
+      }
     }
   }
 </script>
 
 <div class="center">
-  <h2>Entrar</h2>
+  <img src="/assets/splash.png" alt="BioProFar" class="logo" />
+
   <form class="container" on:submit={onEntrar}>
     {#if error}
       <p class="error">{error}</p>

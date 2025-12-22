@@ -8,7 +8,9 @@ export async function serviceCriarPlanta(planta: Planta) {
 
     const requisicao = new Response(json.data)
 
-    return requisicao.response as Planta
+    console.log(requisicao.response)
+
+    return requisicao.response as number
   } catch (error) {
     throw new Error(error.message)
   }
@@ -19,10 +21,12 @@ export async function serviceListagemPlantas(
   filtroReniSUS?: string,
   idIndicacaoUso?: Number,
   idMetodoPreparo?: Number,
+  idUsuario?: Number
 ) {
   try {
+
     const json = await api.get('/planta/listagem', {
-      params: { filtroRename, filtroReniSUS, idIndicacaoUso, idMetodoPreparo },
+      params: { filtroRename, filtroReniSUS, idIndicacaoUso, idMetodoPreparo, idUsuario },
     })
 
     const requisicao = new Response(json.data)
@@ -33,10 +37,31 @@ export async function serviceListagemPlantas(
   }
 }
 
-export async function servicerObterPlantaPorID(idPlanta: number) {
+export async function servicerFavoritarPlanta(idPlanta: number, idUsuario: number) {
+  try {
+    const json = await api.post(
+      '/planta/plantaFavorita',
+      null, // body vazio
+      {
+        params: {
+          idPlanta,
+          idUsuario,
+        },
+      },
+    )
+
+    const requisicao = new Response(json.data)
+    return requisicao.mensagem
+  } catch (err: any) {
+    throw new Error(err.message)
+  }
+}
+
+
+export async function servicerObterPlantaPorID(idPlanta: number, idUsuario: number) {
   try {
     const json = await api.get('/planta/obterPorId', {
-      params: { id: idPlanta },
+      params: { id: idPlanta, usuarioId: idUsuario },
     })
 
     const requisicao = new Response(json.data)
@@ -58,6 +83,18 @@ export async function serviceAtualizarImagem(id: number, imagem: File) {
     const requisicao = new Response(json.data)
 
     return requisicao.response as string
+  } catch (error) {
+    throw new Error(error.message)
+  }
+}
+
+export async function serviceAtualizarPlanta(planta: Planta) {
+  try {
+    const json = await api.put('/planta/editarPlanta', planta)
+
+    const requisicao = new Response(json.data)
+
+    return requisicao.response as number
   } catch (error) {
     throw new Error(error.message)
   }

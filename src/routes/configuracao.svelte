@@ -2,66 +2,117 @@
   import BarraTopo from '@/components/BarraTopo.svelte'
   import BotaoVoltar from '@/components/BotaoVoltar.svelte'
   import Input from '@/components/Input.svelte'
-  import { controllerSalvarNovaSenhaRecuperacaoUsuario } from '@/controllers/usuarioController'
+  import {
+    controllerSalvarNovaSenhaRecuperacaoUsuario,
+    controllerAtualizarUsuario,
+  } from '@/controllers/usuarioController'
   import { usuarioStore } from '@/store'
-  import { LucideUser } from '@lucide/svelte'
   import { goto } from '@roxi/routify'
+  import { get } from 'svelte/store'
+  import { onMount } from 'svelte'
+  import { UsuarioModel } from '@/models/UsuarioModel'
 
   let irPara: any
   $: irPara = $goto
 
-  const usuario = $usuarioStore
-
-  let modalTrocarSenha = false
   let senha = ''
   let senhaConfirmar = ''
+  let modalTrocarSenha = false
+
+  // cópia editável
+  let usuarioEditavel = { ...get(usuarioStore) }
+
+  // mantém sincronizado se o store mudar
+  $: if ($usuarioStore) {
+    usuarioEditavel = { ...$usuarioStore }
+  }
+
+  onMount(() => {
+    const dadosSalvos = localStorage.getItem('usuario')
+    const usuarioLogado = get(usuarioStore)
+
+    if (!usuarioLogado?.idUsuario && !dadosSalvos) {
+      const desejaIdentificar = confirm(
+        'Você não está logado, deseja ser redirecionado para fazer login ou cadastrar-se?',
+      )
+
+      if (desejaIdentificar) {
+        irPara('/login')
+      } else {
+        irPara('/')
+      }
+    }
+  })
+
+  async function onSalvarAlteracoes() {
+    try {
+      const usuarioAtualizado = await controllerAtualizarUsuario(usuarioEditavel)
+      usuarioStore.update(() => usuarioAtualizado)
+      localStorage.setItem('usuario', JSON.stringify(usuarioAtualizado))
+      alert('Dados atualizados com sucesso.')
+    } catch (error) {
+      alert('Erro ao salvar alterações.')
+    }
+  }
 
   async function onMudarSenha() {
     try {
-      const response = await controllerSalvarNovaSenhaRecuperacaoUsuario($usuarioStore.idUsuario, senha, senhaConfirmar)
-      irPara('/')
+      await controllerSalvarNovaSenhaRecuperacaoUsuario($usuarioStore.idUsuario, senha, senhaConfirmar)
+      alert('Senha alterada com sucesso!')
+      onSairSenha()
     } catch (error) {
       alert(error.message)
     }
   }
 
-  function onSair() {
+  function onLogout() {
+    usuarioStore.set(new UsuarioModel())
+    localStorage.removeItem('usuario')
+    irPara('/')
+  }
+
+  function onSairSenha() {
     modalTrocarSenha = false
     senha = ''
     senhaConfirmar = ''
   }
 </script>
 
-<BarraTopo>
+<BarraTopo titulo="Seu Perfil">
   <BotaoVoltar destino={'/'} />
 </BarraTopo>
 
 <div id="main">
-  <div>
-    <LucideUser color="white" />
+  <div class="dadosUsuario">
+    <label>Nome:</label>
+    <Input bind:value={usuarioEditavel.nomeUsuario} />
+
+    <label>Email:</label>
+    <Input keyboardType="email-address" bind:value={usuarioEditavel.emailUsuario} />
   </div>
-  <span style="display: flex; flex-direction: column;">
-    <span>Nome: {usuario.nomeUsuario}</span>
-    <span>Email: {usuario.emailUsuario}</span>
-  </span>
-  <button on:click={() => (modalTrocarSenha = true)}>Mudar senha</button>
+
+  <div class="acoes">
+    <button on:click={onSalvarAlteracoes}> Salvar </button>
+
+    <button on:click={() => (modalTrocarSenha = true)}> Mudar senha </button>
+
+    <button on:click={onLogout}> Sair da Conta </button>
+  </div>
 </div>
 
 {#if modalTrocarSenha}
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="modal" on:click={onSair}>
+  <div class="modal" on:click={onSairSenha}>
     <div class="modal-content" on:click|stopPropagation>
       <h2>Mudar senha</h2>
 
-      <label for="senha">Senha:</label>
-      <Input keyboardType="default" secureTextEntry bind:value={senha} />
+      <label>Senha:</label>
+      <Input keyboardType="password" bind:value={senha} />
 
-      <label for="senha">Confirmar senha:</label>
-      <Input keyboardType="default" secureTextEntry bind:value={senhaConfirmar} />
+      <label>Confirmar senha:</label>
+      <Input keyboardType="password" bind:value={senhaConfirmar} />
 
       <div class="botoesContainer">
-        <button on:click={onSair}>Fechar</button>
+        <button on:click={onSairSenha}>Fechar</button>
         <button on:click={onMudarSenha}>Confirmar</button>
       </div>
     </div>
@@ -72,31 +123,57 @@
   #main {
     margin-top: 30px;
     display: flex;
-    justify-content: center;
-    align-items: center;
     flex-direction: column;
+    align-items: center;
     gap: 20px;
   }
 
-  #main div {
+  .dadosUsuario {
     display: flex;
-    background: linear-gradient(120deg, #7a8863, #a1b07d);
-    padding: 20px;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .acoes {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Aumentei um pouco o gap para respirar como na imagem */
+    width: 100%;
+    max-width: 300px;
+  }
+
+  /* Estilo dos botões para bater com a imagem enviada */
+  .acoes button {
+    width: 100%;
+    padding: 14px;
+    cursor: pointer;
+
+    /* Alinhamento Central */
+    display: flex;
     justify-content: center;
     align-items: center;
-    border-radius: 100%;
+    text-align: center;
+
+    /* Estética da Imagem */
+    background-color: #9fb284; /* Verde aproximado da foto */
+    color: white;
+    border: none;
+    border-radius: 50px; /* Deixa bem arredondado nas pontas */
+    font-weight: bold;
+    text-transform: uppercase; /* SALVAR, MUDAR SENHA... */
+    letter-spacing: 1px;
   }
 
   .modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     background: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 1000;
   }
 
   .modal-content {
@@ -106,9 +183,8 @@
     width: 95%;
     max-width: 500px;
     box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.25);
-    position: relative;
     max-height: 95%;
-    overflow: scroll;
+    overflow: auto;
   }
 
   .modal-content h2 {
@@ -117,8 +193,15 @@
 
   .botoesContainer {
     display: flex;
-    justify-content: end;
-    margin-top: 10px;
+    justify-content: flex-end;
+    margin-top: 15px;
     gap: 10px;
+  }
+
+  .botoesContainer button {
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
   }
 </style>

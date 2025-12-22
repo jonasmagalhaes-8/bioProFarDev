@@ -6,4 +6,10 @@
   const router = createRouter({ routes })
 </script>
 
+<script lang="ts">
+  import { SvelteToast } from '@zerodevx/svelte-toast'
+</script>
+
+<SvelteToast />
+
 <Router {router} />

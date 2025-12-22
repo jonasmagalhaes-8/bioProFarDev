@@ -7,6 +7,7 @@
   import ListagemModosPreparo from '@/components/ListagemModosPreparo.svelte'
   import BarraTopo from '@/components/BarraTopo.svelte'
   import Input from '@/components/Input.svelte'
+  import { usuarioStore } from '@/store'
 
   let descricaoListagemModosPreparo: string = 'Carregando Modos de Preparo...'
 
@@ -75,9 +76,11 @@
   <BarraDePesquisa texto={descricaoListagemModosPreparo} bind:termoPesquisa />
 </BarraTopo>
 
-<div class="criar-modo-preparo" on:click={() => (modalCriarModoPreparoAberto = true)}>
-  <span>Criar modo de preparo</span>
-</div>
+{#if $usuarioStore.usuarioAdmin}
+  <div role="button" class="criar-modo-preparo" on:click={() => (modalCriarModoPreparoAberto = true)}>
+    <span>Criar modo de preparo</span>
+  </div>
+{/if}
 
 {#each modosPreparoFiltradas as modoPreparo}
   <ListagemModosPreparo {modoPreparo} />
@@ -86,7 +89,6 @@
 {#if modalCriarModoPreparoAberto}
   <div class="modal">
     <div class="modal-content">
-      <h2>Criar Modo de Preparo</h2>
       <div on:submit={(e) => onCriarModoPreparo(e)}>
         <label for="Descrição">Descrição</label>
         <Input autoCapitalize="sentences" bind:value={modoPreparo.descricaoMetodo} />

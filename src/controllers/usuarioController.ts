@@ -1,5 +1,6 @@
 import { UsuarioModel } from '@/models/UsuarioModel'
 import {
+  serviceListarUsuarios,
   serviceLoginUsuario,
   serviceRecuperarSenhaUsuario,
   serviceSalvarNovaSenhaRecuperacaoUsuario,
@@ -34,24 +35,30 @@ export async function controllerSalvarUsuario(usuario: UsuarioModel) {
     throw new Error('CPF de usuário é obrigatório, deve ter pelo menos 14 caracteres e ser válido')
   }
 
+  usuario.usuarioAdmin = false
+
   return serviceSalvarUsuario(usuario)
 }
 
 export async function controllerLoginUsuario(usuario: UsuarioModel) {
-  if (
-    !usuario.emailUsuario ||
-    !usuario.emailUsuario.match(
-      /(?:[a-z0-9!#$%&'*+\x2f=?^_`\x7b-\x7d~\x2d]+(?:\.[a-z0-9!#$%&'*+\x2f=?^_`\x7b-\x7d~\x2d]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9\x2d]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9\x2d]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9\x2d]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/i,
-    )
-  ) {
-    throw new Error('Email de usuário é obrigatório e deve ser válido')
-  }
+  try {
+    if (
+      !usuario.emailUsuario ||
+      !usuario.emailUsuario.match(
+        /(?:[a-z0-9!#$%&'*+\x2f=?^_`\x7b-\x7d~\x2d]+(?:\.[a-z0-9!#$%&'*+\x2f=?^_`\x7b-\x7d~\x2d]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9\x2d]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9\x2d]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9\x2d]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/i,
+      )
+    ) {
+      throw new Error('Email de usuário é obrigatório e deve ser válido')
+    }
 
-  if (!usuario.senhaUsuario || usuario.senhaUsuario.length < 6) {
-    throw new Error('Senha de usuário é obrigatória e deve ter pelo menos 6 caracteres')
-  }
+    if (!usuario.senhaUsuario || usuario.senhaUsuario.length < 6) {
+      throw new Error('Senha de usuário é obrigatória e deve ter pelo menos 6 caracteres')
+    }
 
-  return serviceLoginUsuario(usuario)
+    return serviceLoginUsuario(usuario)
+  } catch (error) {
+    throw new Error(error.message)
+  }
 }
 
 export async function controllerEnviarEmailRecuperarSenhaUsuario(emailUsuario: string) {
@@ -93,4 +100,12 @@ export async function controllerSalvarNovaSenhaRecuperacaoUsuario(
   }
 
   return serviceSalvarNovaSenhaRecuperacaoUsuario(idUsuario, novaSenhaUsuario)
+}
+
+export async function controllerListarUsuarios(usuariosBloqueados: boolean | null, usuariosAdmin: boolean | null) {
+  return await serviceListarUsuarios(usuariosBloqueados, usuariosAdmin)
+}
+
+export async function controllerAtualizarUsuario(usuario: UsuarioModel) {
+  return serviceSalvarUsuario(usuario)
 }

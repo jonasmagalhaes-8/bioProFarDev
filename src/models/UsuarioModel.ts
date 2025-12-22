@@ -6,5 +6,6 @@ export class UsuarioModel {
   dataCadastroUsuario: string
   celularUsuario: string
   cpfUsuario: string
-  usuarioAdmin: boolean
+  usuarioAdmin: boolean = false
+  bloqueioUsuario: boolean
 }

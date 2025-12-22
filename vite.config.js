@@ -16,8 +16,9 @@ export default defineConfig({
     plugins: [
         routify({
             render: {
-                ssg: !!production,
-                ssr: false,   // 🔴 desliga SSR
+                // 👇 MUDANÇA AQUI: Force false para não rodar no servidor/build
+                ssg: false,
+                ssr: false,
             },
         }),
         svelte({
@@ -28,11 +29,11 @@ export default defineConfig({
     ],
     server: {
         port: 1337,
-        host: true, // permite acesso externo
+        host: true,
         allowedHosts: [
             'localhost',
             '127.0.0.1',
-            'vocal-rarely-treefrog.ngrok-free.app', // seu ngrok
+            'vocal-rarely-treefrog.ngrok-free.app',
         ],
     },
 })

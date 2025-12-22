@@ -7,6 +7,7 @@
   import { Planta } from '@/models/Planta'
   import { controllerListagemPlantas } from '@/controllers/plantaController'
   import BarraTopo from '@/components/BarraTopo.svelte'
+  import { usuarioStore } from '@/store'
 
   const idIndicacaoUso: Number = Number.parseInt($params.idIndicacaoUso)
 
@@ -18,7 +19,7 @@
   let termoPesquisa: string = ''
 
   onMount(async () => {
-    plantas = await controllerListagemPlantas(null, null, idIndicacaoUso)
+    plantas = await controllerListagemPlantas(null, null, idIndicacaoUso, null, null)
     if (plantas.length > 0) {
       descricaoBuscaPlantas = 'Buscar Planta'
     } else {
@@ -47,7 +48,13 @@
 </BarraTopo>
 
 {#each plantasFiltradas as planta}
-  <ListagemPlantaItem {planta} origemListagemRename={null} {idIndicacaoUso} idModoPreparo={null} />
+  <ListagemPlantaItem
+    {planta}
+    origemListagemRename={null}
+    origemListagemFavoritos={null}
+    {idIndicacaoUso}
+    idModoPreparo={null}
+  />
 {/each}
 
 <style>

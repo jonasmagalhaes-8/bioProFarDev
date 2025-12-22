@@ -4,7 +4,7 @@
   import Input from '@/components/Input.svelte'
   import { controllerListagemIndicacoesUso } from '@/controllers/indicacoesUsoController'
   import { Planta } from '@/models/Planta'
-  import { LucideCheck, LucidePlus } from '@lucide/svelte'
+  import { LucideCheck, LucidePlus, LucideUpload } from '@lucide/svelte'
   import { goto, params } from '@roxi/routify'
   import { onMount } from 'svelte'
   import { IndicacaoUso } from '@/models/IndicacaoUso'
@@ -15,6 +15,8 @@
   import { EstudoCientifico } from '@/models/EstudoCientifico'
   import { controllerCriarPlanta } from '@/controllers/plantaController'
   import { usuarioStore } from '@/store'
+  import { IndicacaoPlantaModel } from '@/models/IndicacaoPlantaModel'
+  import { toast } from '@zerodevx/svelte-toast'
 
   let irPara: any
   $: irPara = $goto
@@ -24,7 +26,26 @@
   let indicacoes: IndicacaoUso[] = []
   let modosPreparo: MetodoPreparo[] = []
 
+  let indicacoesSelecionadasDropdown: IndicacaoUso[] = []
+
   let planta: Planta = new Planta()
+
+  let previewUrl: string
+  let imagem: File
+
+  const onImagemChange = (event: Event) => {
+    const input = event.target as HTMLInputElement
+
+    if (!input.files || input.files.length === 0) return
+
+    imagem = input.files[0]
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+    }
+
+    previewUrl = URL.createObjectURL(imagem)
+  }
 
   let modalReferenciasContraIndicacoes = false
   let referenciasContraIndicacoes: string[] = ['']
@@ -41,10 +62,6 @@
 
   let modalEstudosCientificoAdicionar = false
   let estudosCientifico: EstudoCientifico
-
-  $: formasPreparoTexto = formasPreparo
-    .map((f) => modosPreparo.find((m) => m.idMetodoPreparo === f.metodoPreparo.idMetodoPreparo)?.descricaoMetodo || '')
-    .join(', ')
 
   onMount(async () => {
     try {
@@ -64,7 +81,14 @@
 
   const onCriarPlanta = async () => {
     try {
+      planta.indicacoesPlanta = indicacoesSelecionadasDropdown.map((indUso) => {
+        const novaRelacao = new IndicacaoPlantaModel()
+        novaRelacao.indicacaoUso = indUso
+        return novaRelacao
+      })
+
       await controllerCriarPlanta(
+        imagem,
         planta,
         referenciasContraIndicacoes,
         referenciasEfeitosAdversos,
@@ -75,23 +99,43 @@
       const valorRename = rename ? rename.toString() : 'true'
 
       irPara('/listagemplantas', { rename: valorRename })
+
+      toast.push('Planta criada')
     } catch (error) {
       alert(error.message)
     }
   }
 </script>
 
-<BarraTopo>
+<BarraTopo titulo="Criar Planta">
   <BotaoVoltar destino={`/listagemplantas?rename=${rename}`} />
 </BarraTopo>
 
-<main>
-  <h2>Criar planta</h2>
+<main class="main-container">
+  <div class="form-content">
+    <div class="upload-section">
+      <label for="file-upload" class="custom-file-upload">
+        <LucideUpload size="20" style="margin-right: 8px;" />
+        {imagem ? 'Trocar Imagem' : 'Selecionar Imagem da Planta'}
+      </label>
 
-  <div>
+      <input
+        id="file-upload"
+        type="file"
+        accept="image/jpeg,image/png,image/bmp,image/gif,.jpg,.jpeg,.png,.bmp,.gif"
+        on:change={onImagemChange}
+      />
+
+      <span class="file-name">
+        {imagem ? imagem.name : 'Nenhum arquivo selecionado'}
+      </span>
+
+      {#if previewUrl}
+        <img src={previewUrl} alt="Pré-visualização da imagem" class="preview-img" />
+      {/if}
+    </div>
+
     <fieldset>
-      <legend>Nomes</legend>
-
       <label for="nome-comum">Nome da Planta:</label>
       <Input keyboardType="default" bind:value={planta.nome} />
 
@@ -134,7 +178,7 @@
       </div>
 
       <div class="checkbox-container">
-        <label for="rename"
+        <label for="renisus"
           ><input
             type="checkbox"
             name="renisus"
@@ -158,7 +202,7 @@
 
       <Input
         keyboardType="default"
-        placeholder="Insira aqui um Resumo"
+        placeholder="Resumo de Indicações"
         bind:value={planta.indicacao}
         style="margin-bottom: 10px;"
       />
@@ -168,7 +212,7 @@
           id: indicacao,
           value: indicacao.nomeIndicacao,
         }))}
-        bind:selected={planta.indicacoesPlanta}
+        bind:selected={indicacoesSelecionadasDropdown}
         placeholder="Selecione indicações..."
       />
     </fieldset>
@@ -181,13 +225,11 @@
       <label for="contraindicacaoreferencias">Referências:</label>
       <button on:click={() => (modalReferenciasContraIndicacoes = true)}>Abrir Referências</button>
       {#if modalReferenciasContraIndicacoes}
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div class="modal" on:click={() => (modalReferenciasContraIndicacoes = false)}>
           <div class="modalContent" on:click={(e) => e.stopPropagation()}>
             <div class="referenciaContainer">
               <h4>Referências de Contraindicações</h4>
-              {#each referenciasContraIndicacoes as referencia, index}
+              {#each referenciasContraIndicacoes as _, index}
                 <Input keyboardType="default" bind:value={referenciasContraIndicacoes[index]} />
                 {#if referenciasContraIndicacoes.length > 1}
                   <div>
@@ -227,13 +269,11 @@
       <label for="efeitosAdversosReferencias">Referências</label>
       <button on:click={() => (modalReferenciasEfeitosAdversos = true)}>Abrir Referências</button>
       {#if modalReferenciasEfeitosAdversos}
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div class="modal" on:click={() => (modalReferenciasEfeitosAdversos = false)}>
           <div class="modalContent" on:click={(e) => e.stopPropagation()}>
             <div class="referenciaContainer">
               <h4>Referências de Efeitos Adversos</h4>
-              {#each referenciasEfeitosAdversos as referencia, index}
+              {#each referenciasEfeitosAdversos as _, index}
                 <Input keyboardType="default" bind:value={referenciasEfeitosAdversos[index]} />
                 {#if referenciasEfeitosAdversos.length > 1}
                   <div>
@@ -273,9 +313,23 @@
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div class="modal" on:click={() => (modalComoUtilizar = false)}>
           <div class="modalContent" on:click={(e) => e.stopPropagation()}>
-            {#if formasPreparoTexto.length > 0}
-              <p>{formasPreparoTexto}</p>
-            {/if}
+            {#each formasPreparo as forma, index}
+              <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+                <h4>{forma.tipo}</h4>
+                {#if forma.tipo === 'CASEIRA'}
+                  <p><strong>Parte da Planta:</strong> {forma.partePlantaCaseiro || 'Não informado'}</p>
+                  <p><strong>Posologia:</strong> {forma.posologiaCaseiro || 'Não informado'}</p>
+                {:else}
+                  <p><strong>Composição:</strong> {forma.composicaoConcentracao || 'Não informado'}</p>
+                  <p><strong>RENAME:</strong> {forma.constaRename || 'Não informado'}</p>
+                {/if}
+                <div>
+                  <button on:click={() => (formasPreparo = formasPreparo.filter((f, i) => i !== index))}>
+                    Remover
+                  </button>
+                </div>
+              </div>
+            {/each}
             <button
               on:click={() => {
                 formaPreparoTemp = { ...new FormaPreparo(), referencias: [''] }
@@ -285,13 +339,13 @@
                 modalComoUtilizarAdicionar = true
               }}>+ Nova forma de preparo</button
             >
+            <button on:click={() => (modalComoUtilizar = false)}>Sair</button>
           </div>
         </div>
       {/if}
 
       {#if modalComoUtilizarAdicionar}
         <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div class="modal" on:click={() => (modalComoUtilizarAdicionar = false)}>
           <div class="modalContent" on:click={(e) => e.stopPropagation()}>
             <label for="tipoComoUtilizar">Tipo:</label>
@@ -304,30 +358,31 @@
               <div>
                 <label for="parteDaPlanta">Parte da Planta:</label>
                 <Input keyboardType="default" bind:value={formaPreparoTemp.partePlantaCaseiro} />
-
-                <label for="posologia">Posologia:</label>
-                <Input keyboardType="default" bind:value={formaPreparoTemp.posologiaCaseiro} />
               </div>
+
+              <label for="metodoPreparo">Método de Preparo:</label>
+              <select name="metodoPreparo" id="metodoPreparo" bind:value={formaPreparoTemp.metodoPreparo}>
+                <option value="" disabled selected>Selecione o método de preparo</option>
+                {#each modosPreparo as metodo}
+                  <option value={metodo}>{metodo.descricaoMetodo}</option>
+                {/each}
+              </select>
             {:else}
               <div>
                 <label for="composicaoEConcentracao">Composição/Concentração:</label>
                 <Input keyboardType="default" bind:value={formaPreparoTemp.composicaoConcentracao} />
+
+                <label for="temNaRename">Tem na Rename?</label>
+                <select name="temNaRename" id="temNaRename" bind:value={formaPreparoTemp.constaRename}>
+                  <option value="SIM">SIM</option>
+                  <option value="NÃO">NÃO</option>
+                </select>
               </div>
             {/if}
-            <label for="temNaRename">Tem na Rename?</label>
-            <select name="temNaRename" id="temNaRename" bind:value={formaPreparoTemp.constaRename}>
-              <option value="SIM">SIM</option>
-              <option value="NÃO">NÃO</option>
-            </select>
-            <label for="metodoPreparo">Método de Preparo:</label>
-            <select name="metodoPreparo" id="metodoPreparo" bind:value={formaPreparoTemp.metodoPreparo}>
-              <option value="" disabled selected>Selecione o método de preparo</option>
-              {#each modosPreparo as metodo}
-                <option value={metodo}>{metodo.descricaoMetodo}</option>
-              {/each}
-            </select>
+            <label for="posologia">Posologia:</label>
+            <Input keyboardType="default" bind:value={formaPreparoTemp.posologiaCaseiro} />
             <label for="referenciasFormaPreparo">Referências:</label>
-            {#each formaPreparoTemp.referencias as referencia, index}
+            {#each formaPreparoTemp.referencias as _, index}
               <Input keyboardType="default" bind:value={formaPreparoTemp.referencias[index]} />
               {#if formaPreparoTemp.referencias.length > 1}
                 <div>
@@ -369,8 +424,6 @@
       <button on:click={() => (modalEstudosCientifico = true)}>Definir Estudos Científicos</button>
 
       {#if modalEstudosCientifico}
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div class="modal" on:click={() => (modalEstudosCientifico = false)}>
           <div class="modalContent" on:click={(e) => e.stopPropagation()}>
             <label for="resumoTrabalhos">Resumo Geral dos Trabalhos:</label>
@@ -400,7 +453,7 @@
                   on:click={() => {
                     modalEstudosCientificoAdicionar = true
                     estudosCientifico = new EstudoCientifico()
-                  }}><LucidePlus /></button
+                  }}>+ Adicionar estudo</button
                 >
                 <button class="referenciaBotao" on:click={() => (modalEstudosCientifico = false)}>
                   <LucideCheck />
@@ -411,13 +464,8 @@
         </div>
 
         {#if modalEstudosCientificoAdicionar}
-          <!-- svelte-ignore a11y_click_events_have_key_events -->
-          <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div class="modal" on:click={() => (modalEstudosCientificoAdicionar = false)}>
             <div class="modalContent" on:click={(e) => e.stopPropagation()}>
-              <label for="resumoTrabalhos">Resumo Geral dos Trabalhos:</label>
-              <textarea name="resumoTrabalhos" id="resumoTrabalhos" bind:value={planta.resumoTrabalhos}></textarea>
-
               <label for="tituloResumo">Título/Resumo:</label>
               <Input keyboardType="default" bind:value={estudosCientifico.tituloResumo} />
 
@@ -474,12 +522,65 @@
 </main>
 
 <style>
+  /* Correção para o teclado não cobrir os campos */
+  .main-container {
+    height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-content {
+    padding-bottom: 250px; /* Garante scroll suficiente acima do teclado */
+  }
+
   main h2 {
     font-size: 4vh;
     color: #2e3b1f;
     font-weight: 700;
     margin: 20px;
     text-align: center;
+  }
+
+  /* Estilização customizada para o Upload de Imagem */
+  .upload-section {
+    width: 80%;
+    margin: 15px auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  input[type='file'] {
+    display: none; /* Esconde o nativo "Choose File" */
+  }
+
+  .custom-file-upload {
+    display: flex;
+    align-items: center;
+    background-color: #7a8863;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .file-name {
+    font-size: 14px;
+    color: #666;
+    text-align: center;
+    margin-bottom: 5px;
+  }
+
+  .preview-img {
+    max-width: 100%;
+    margin-top: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   .referenciaContainer {
@@ -509,17 +610,23 @@
     margin-top: 10px;
     padding: 5px 15px;
     border-radius: 12px;
+    border: none;
   }
 
   #submitButton {
     text-align: center;
     font-size: 16px;
-    margin: 20px;
+    margin-left: 20px;
+    margin-right: 20px;
     border: none;
     border-radius: 8px;
     cursor: pointer;
     width: calc(100% - 40px);
+    background-color: #2e3b1f;
+    color: white;
+    font-weight: bold;
   }
+
   fieldset {
     border: 2px solid #d3d3d3;
     border-radius: 8px;
@@ -548,14 +655,15 @@
 
   .modal {
     position: fixed;
-    top: 0;
+    top: 13.7vh;
     left: 0;
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    padding-top: 5px;
   }
 
   .modalContent {
@@ -568,6 +676,6 @@
     box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
-    overflow: scroll;
+    overflow-y: auto;
   }
 </style>

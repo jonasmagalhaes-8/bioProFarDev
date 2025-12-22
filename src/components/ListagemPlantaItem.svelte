@@ -4,6 +4,7 @@
 
   export let planta: Planta
   export let origemListagemRename: boolean
+  export let origemListagemFavoritos: boolean
   export let idIndicacaoUso: Number
   export let idModoPreparo: Number
 </script>
@@ -11,6 +12,7 @@
 <a
   href={$url('/paginaPlanta', {
     id: planta.idPlanta.toString(),
+    origemListagemFavoritos: origemListagemFavoritos != null ? origemListagemFavoritos.toString() : null,
     rename: origemListagemRename != null ? origemListagemRename.toString() : null,
     idIndicacaoUso: idIndicacaoUso != null ? idIndicacaoUso.toString() : null,
     idModoPreparo: idModoPreparo != null ? idModoPreparo.toString() : null,
@@ -34,32 +36,9 @@
     background: linear-gradient(120deg, #7a8863, #a1b07d);
     border-radius: 15px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     text-decoration: none;
     color: #fff;
-    position: relative;
     overflow: hidden;
-    animation: slideIn 0.5s ease-out backwards;
-  }
-
-  .itemPlanta:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
-    background: linear-gradient(120deg, #a1b07d, #7a8863);
-  }
-
-  .itemPlanta:hover::before {
-    left: 100%;
-  }
-
-  .itemPlanta:hover {
-    transform: translateX(8px) translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-    background: linear-gradient(120deg, #8a9873, #b1c08d);
-  }
-
-  .itemPlanta:active {
-    transform: translateX(4px) translateY(-1px);
   }
 
   .textoPlanta {
@@ -85,9 +64,5 @@
     align-items: center;
     justify-content: center;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .itemPlanta:hover .botao {
-    transform: translateX(5px);
   }
 </style>

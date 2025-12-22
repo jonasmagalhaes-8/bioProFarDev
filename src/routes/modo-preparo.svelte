@@ -5,7 +5,7 @@
   import ListagemPlantaItem from '@/components/ListagemPlantaItem.svelte'
   import BotaoVoltar from '@/components/BotaoVoltar.svelte'
   import { Planta } from '@/models/Planta'
-  import { controllerListagemPlantas, controllerObterPlantaPorID } from '@/controllers/plantaController'
+  import { controllerListagemPlantas } from '@/controllers/plantaController'
   import { MetodoPreparo } from '@/models/MetodoPreparo'
   import {
     controllerCriarModoPreparo,
@@ -16,6 +16,7 @@
   import { LucideEdit3, LucideTrash } from '@lucide/svelte'
   import Input from '@/components/Input.svelte'
   import Apagar from '@/components/Apagar.svelte'
+  import { usuarioStore } from '@/store'
 
   let irPara: any
   $: irPara = $goto
@@ -78,7 +79,13 @@
   }
 
   onMount(async () => {
-    plantas = await controllerListagemPlantas(null, null, null, idModoPreparo)
+    const usuarioStorage = localStorage.getItem('usuario')
+
+    if (usuarioStorage != null && usuarioStorage == '') {
+      usuarioStore.set(JSON.parse(usuarioStorage))
+    }
+
+    plantas = await controllerListagemPlantas(null, null, null, idModoPreparo, null)
     await getModoPreparo()
 
     if (plantas.length > 0) {
@@ -104,14 +111,22 @@
 <div id="container">
   <div class="cabecalho">
     <div class="fonteDestaque">{descricao}</div>
-    <div class="botoesContainer">
-      <button on:click={() => (modalEditarModoPreparoAberto = true)}>
-        <LucideEdit3 />
-      </button>
-      <button on:click={() => (modalApagarModoPreparoAberto = true)}>
-        <LucideTrash />
-      </button>
-    </div>
+    {#if $usuarioStore && $usuarioStore.usuarioAdmin}
+      <div class="botoesContainer">
+        <button
+          on:click={() => {
+            if (modoPreparo) {
+              modalEditarModoPreparoAberto = true
+            }
+          }}
+        >
+          <LucideEdit3 />
+        </button>
+        <button on:click={() => (modalApagarModoPreparoAberto = true)}>
+          <LucideTrash />
+        </button>
+      </div>
+    {/if}
   </div>
   <div class="fonteDescricao">
     {@html referenciasHTML}
@@ -122,7 +137,6 @@
 {#if modalEditarModoPreparoAberto}
   <div class="modal">
     <div class="modal-content">
-      <h2>Criar Modo de Preparo</h2>
       <div on:submit={(e) => onEditarModoPreparo(e)}>
         <label for="Descrição">Descrição</label>
         <Input autoCapitalize="sentences" bind:value={modoPreparo.descricaoMetodo} />
@@ -153,6 +167,16 @@
   </div>
 {/if}
 
+{#each plantasFiltradas as planta}
+  <ListagemPlantaItem
+    {planta}
+    origemListagemFavoritos={null}
+    origemListagemRename={null}
+    idIndicacaoUso={null}
+    {idModoPreparo}
+  />
+{/each}
+
 <Apagar
   bind:aberto={modalApagarModoPreparoAberto}
   titulo="Apagar Modo de Preparo"
@@ -160,10 +184,6 @@
   onConfirmar={onApagarModoPreparo}
   onFechar={() => (modalApagarModoPreparoAberto = false)}
 />
-
-{#each plantasFiltradas as planta}
-  <ListagemPlantaItem {planta} origemListagemRename={null} idIndicacaoUso={null} {idModoPreparo} />
-{/each}
 
 <style>
   #container {

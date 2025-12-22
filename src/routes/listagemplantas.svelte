@@ -7,6 +7,7 @@
   import { Planta } from '@/models/Planta'
   import { controllerListagemPlantas } from '@/controllers/plantaController'
   import BarraTopo from '@/components/BarraTopo.svelte'
+  import { usuarioStore } from '@/store'
 
   const rename: boolean = $params.rename === 'true'
   const titulo: string = rename ? 'O que é a RENAME?' : 'O que é a lista ReniSUS?'
@@ -21,7 +22,7 @@
   let termoPesquisa: string = ''
 
   onMount(async () => {
-    plantas = await controllerListagemPlantas(rename ? 'SIM' : null, !rename ? 'SIM' : null)
+    plantas = await controllerListagemPlantas(rename ? 'SIM' : null, !rename ? 'SIM' : null, null, null, null)
     if (plantas.length > 0) {
       descricaoListagemPlantas = rename ? 'Lista de fitoterápicos inclusos na RENAME:' : 'Lista ReniSUS:'
     } else {
@@ -60,9 +61,18 @@
   </div>
 </div>
 
-<a href={`/criar-planta?rename=${rename}`} class="criar-planta"> Criar planta </a>
+{#if $usuarioStore.usuarioAdmin}
+  <a href={`/criar-planta?rename=${rename}`} class="criar-planta"> Criar planta </a>
+{/if}
+
 {#each plantasFiltradas as planta}
-  <ListagemPlantaItem {planta} origemListagemRename={rename} idIndicacaoUso={null} idModoPreparo={null} />
+  <ListagemPlantaItem
+    {planta}
+    origemListagemFavoritos={null}
+    origemListagemRename={rename}
+    idIndicacaoUso={null}
+    idModoPreparo={null}
+  />
 {/each}
 
 <style>

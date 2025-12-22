@@ -36,26 +36,6 @@
     animation: slideIn 0.5s ease-out backwards;
   }
 
-  .itemModoPreparo:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
-    background: linear-gradient(120deg, #a1b07d, #7a8863);
-  }
-
-  .itemModoPreparo:hover::before {
-    left: 100%;
-  }
-
-  .itemModoPreparo:hover {
-    transform: translateX(8px) translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-    background: linear-gradient(120deg, #8a9873, #b1c08d);
-  }
-
-  .itemModoPreparo:active {
-    transform: translateX(4px) translateY(-1px);
-  }
-
   .textoModoPreparo {
     font-size: 2.2vh;
     color: #fff;
