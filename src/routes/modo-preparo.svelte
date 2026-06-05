@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { goto, params } from '@roxi/routify'
+  import { goto, params, url } from '@roxi/routify'
   import BarraDePesquisa from '@/components/BarraDePesquisa.svelte'
   import ListagemPlantaItem from '@/components/ListagemPlantaItem.svelte'
   import BotaoVoltar from '@/components/BotaoVoltar.svelte'
@@ -22,6 +22,7 @@
   $: irPara = $goto
 
   const idModoPreparo: number = $params.id
+  const fromPlantId: string = $params.fromPlantId
   let descricao: string = 'Carregando modo de preparo...'
   let descricaoListagemPlantas: string = 'Carregando plantas...'
   let modoPreparo: MetodoPreparo
@@ -104,7 +105,7 @@
 </script>
 
 <BarraTopo>
-  <BotaoVoltar destino={'/listagem-modos-preparo'} />
+  <BotaoVoltar destino={fromPlantId ? $url('/paginaPlanta', { id: fromPlantId }) : '/listagem-modos-preparo'} />
   <BarraDePesquisa texto="Buscar Planta" bind:termoPesquisa />
 </BarraTopo>
 
@@ -129,6 +130,16 @@
     {/if}
   </div>
   <div class="fonteDescricao">
+    {#if modoPreparo?.tipo}
+      <strong>Tipo de Preparo:</strong><br>
+      {modoPreparo.tipo}
+      <br><br>
+    {/if}
+    {#if modoPreparo?.detalhamento}
+      <strong>Detalhamento:</strong><br>
+      {modoPreparo.detalhamento}
+      <br><br>
+    {/if}
     {@html referenciasHTML}
   </div>
   <div class="fonteDestaque">{descricaoListagemPlantas}</div>
@@ -140,6 +151,15 @@
       <div on:submit={(e) => onEditarModoPreparo(e)}>
         <label for="Descrição">Descrição</label>
         <Input autoCapitalize="sentences" bind:value={modoPreparo.descricaoMetodo} />
+
+        <label for="Tipo">Tipo de Preparo</label>
+        <select style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px;" bind:value={modoPreparo.tipo}>
+          <option value="CASEIRA">CASEIRA</option>
+          <option value="FARMACÊUTICA">FARMACÊUTICA</option>
+        </select>
+
+        <label for="Detalhamento">Detalhamento</label>
+        <textarea bind:value={modoPreparo.detalhamento}></textarea>
 
         <label for="referencia1">Referência 1</label>
         <Input autoCapitalize="sentences" bind:value={modoPreparo.referencia1} />

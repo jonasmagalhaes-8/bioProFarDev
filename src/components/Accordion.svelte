@@ -7,12 +7,19 @@
   export let link: string | null = null
   export let rota: string | null = null // exemplo: '/modo-preparo'
   export let params: Record<string, any> | null = null // exemplo: { id: 3 }
-  export let filhos = []
+  export let filhos: string | any[] | null | undefined = []
+  export let mostrarAcoes: boolean = false
+
+  import { createEventDispatcher } from 'svelte'
+  const dispatch = createEventDispatcher()
 
   const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
 
   function destino() {
     if (rota) return $url(rota, params ?? {})
+    if (link && !link.startsWith('http://') && !link.startsWith('https://')) {
+      return 'https://' + link
+    }
     return link // fallback para link externo
   }
 
@@ -50,6 +57,13 @@
       {#each filhos as filho}
         <Accordion {...filho} />
       {/each}
+    {/if}
+
+    {#if mostrarAcoes}
+      <div class="acoesAccordion">
+        <button class="btn-editar" on:click|preventDefault|stopPropagation={() => dispatch('editar')}>Editar</button>
+        <button class="btn-excluir" on:click|preventDefault|stopPropagation={() => dispatch('excluir')}>Excluir</button>
+      </div>
     {/if}
   </div>
 </details>
@@ -124,5 +138,37 @@
     font-weight: 400;
     padding: 0px 2.5px;
     border-top: 1.5px solid #d0d4c0;
+  }
+
+  .acoesAccordion {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #d0d4c0;
+  }
+
+  .acoesAccordion button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.7vh;
+    cursor: pointer;
+    font-weight: 600;
+    color: white;
+  }
+
+  .btn-editar {
+    background-color: #6b7280;
+  }
+
+  .btn-excluir {
+    background-color: #ef4444;
+  }
+
+  .btn-editar:active,
+  .btn-excluir:active {
+    opacity: 0.8;
   }
 </style>

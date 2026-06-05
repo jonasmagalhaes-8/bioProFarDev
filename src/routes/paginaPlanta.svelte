@@ -111,77 +111,7 @@
     : []
   $: filhosContraIndicacao = processarMultiplasReferencias(planta.referenciaContraIndicacao)
   $: filhosEfeitosAdversos = processarMultiplasReferencias(planta.referenciaEfeitosAdversos)
-  $: filhosEstudos = (() => {
-    if (!planta.estudosPorPlanta || planta.estudosPorPlanta.length === 0) {
-      return [
-        {
-          titulo: 'Nenhum estudo científico encontrado',
-          texto: 'Não há estudos científicos cadastrados para esta planta.',
-        },
-      ]
-    }
-    return planta.estudosPorPlanta.map((EstudosPorPlanta) => ({
-      titulo: EstudosPorPlanta.estudoCientifico.tituloResumo,
-      texto: `${EstudosPorPlanta.estudoCientifico.resumo}`,
-      filhos: [
-        {
-          titulo: 'Referências',
-          texto: EstudosPorPlanta.estudoCientifico.referencia,
-          link: EstudosPorPlanta.estudoCientifico.linkReferencia,
-        },
-      ],
-    }))
-  })()
-  $: filhosComoUtilizar = (() => {
-    if (!planta.formaPreparo || planta.formaPreparo.length === 0) {
-      return [
-        {
-          titulo: 'Nenhuma forma de preparo cadastrada',
-          texto: 'Não há formas de preparo ou uso cadastradas para esta planta.',
-        },
-      ]
-    }
-    const formasCaseiras: any[] = []
-    const formasFarmaceuticas: any[] = []
-    planta.formaPreparo.forEach((f) => {
-      if (f.tipo?.toUpperCase() === 'CASEIRA') formasCaseiras.push(f)
-      else formasFarmaceuticas.push(f)
-    })
-    const filhosResult: any[] = []
-    if (formasCaseiras.length > 0) {
-      filhosResult.push({
-        titulo: 'Preparo Caseiro',
-        filhos: formasCaseiras.map((f) => {
-          const refFilhos = processarMultiplasReferencias(f.referencia)
-          return {
-            titulo: f.metodoPreparo?.descricaoMetodo || f.tipo,
-            texto: `Parte da planta: ${f.partePlantaCaseiro || 'Não informado'}<br>Posologia: ${f.posologiaCaseiro || 'Não informado'}`,
-            filhos: refFilhos,
-            ...(f.metodoPreparo?.descricaoMetodo
-              ? { rota: '/modo-preparo', params: { id: f.metodoPreparo.idMetodoPreparo } }
-              : {}),
-          }
-        }),
-      })
-    }
-    if (formasFarmaceuticas.length > 0) {
-      filhosResult.push({
-        titulo: 'Forma(s) Farmacêutica(s)',
-        filhos: formasFarmaceuticas.map((f) => {
-          const refFilhos = processarMultiplasReferencias(f.referencia)
-          return {
-            titulo: f.metodoPreparo?.descricaoMetodo || f.tipo,
-            texto: `Composição/Concentração: ${f.composicaoConcentracao || 'Não informado'}<br>Disponibilidade: ${f.tem_rename?.toUpperCase() === 'SIM' ? 'Disponível na RENAME' : 'Não disponível na RENAME'}`,
-            filhos: refFilhos,
-            ...(f.metodoPreparo?.descricaoMetodo
-              ? { rota: '/modo-preparo', params: { id: f.metodoPreparo.idMetodoPreparo } }
-              : {}),
-          }
-        }),
-      })
-    }
-    return filhosResult
-  })()
+  // filhosEstudos e filhosComoUtilizar foram removidos, pois agora são páginas separadas
 
   // --- LÓGICA DE MONTAGEM E AÇÕES ---
 
@@ -598,18 +528,24 @@
   </div>
 
   <div class="edit-section">
-    <Accordion titulo="Como utilizar?" filhos={filhosComoUtilizar} />
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="link-pagina" on:click={() => irPara('/planta-como-utilizar', { id: planta.idPlanta })}>
+      <span class="tituloAccordion">Como utilizar?</span>
+      <span class="arrow">&rarr;</span>
+    </div>
     {#if $usuarioStore && $usuarioStore?.usuarioAdmin}
       <div class="edit-btn" on:click={() => abrirModal('comoUtilizar')}><LucideEdit3 color="black" size={24.5} /></div>
     {/if}
   </div>
 
   <div class="edit-section">
-    <Accordion
-      titulo="Estudos Científicos"
-      texto={planta.resumoTrabalhos || 'Nenhum resumo disponível.'}
-      filhos={filhosEstudos}
-    />
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="link-pagina" on:click={() => irPara('/planta-estudos-cientificos', { id: planta.idPlanta })}>
+      <span class="tituloAccordion">Estudos Científicos</span>
+      <span class="arrow">&rarr;</span>
+    </div>
     {#if $usuarioStore?.usuarioAdmin}
       <div class="edit-btn" on:click={() => abrirModal('estudos')}><LucideEdit3 color="black" size={24.5} /></div>
     {/if}
@@ -775,8 +711,11 @@
               {#if estudo.estudoCientifico.linkReferencia}
                 <p>
                   <strong>Link:</strong>
-                  <a href={estudo.estudoCientifico.linkReferencia} target="_blank"
-                    >{estudo.estudoCientifico.linkReferencia}</a
+                  <a
+                    href={estudo.estudoCientifico.linkReferencia.startsWith('http')
+                      ? estudo.estudoCientifico.linkReferencia
+                      : `https://${estudo.estudoCientifico.linkReferencia}`}
+                    target="_blank">{estudo.estudoCientifico.linkReferencia}</a
                   >
                 </p>
               {/if}
@@ -815,18 +754,25 @@
         <option value="FARMACEUTICA">FARMACÊUTICA</option>
       </select>
 
+      <label for="metodoPreparo">Método de Preparo:</label>
+      <select name="metodoPreparo" id="metodoPreparo" bind:value={itemEmEdicao.metodoPreparo} style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px; background-color: white;">
+        <option value={null} disabled selected>Selecione o método de preparo</option>
+        {#each modosPreparo.filter((m) => {
+          const t = m.tipo ? m.tipo.trim().toUpperCase() : ''
+          if (itemEmEdicao.tipo === 'CASEIRA') {
+            return t === 'CASEIRA' || t === 'CASEIRO' || t === ''
+          } else {
+            return t.includes('FARMAC') || t === ''
+          }
+        }) as metodo}
+          <option value={metodo}>{metodo.descricaoMetodo}</option>
+        {/each}
+      </select>
+
       {#if itemEmEdicao.tipo === 'CASEIRA'}
         <div>
           <label for="parteDaPlanta">Parte da Planta:</label>
           <Input keyboardType="default" bind:value={itemEmEdicao.partePlantaCaseiro} />
-
-          <label for="metodoPreparo">Método de Preparo:</label>
-          <select name="metodoPreparo" id="metodoPreparo" bind:value={itemEmEdicao.metodoPreparo}>
-            <option value={null} disabled selected>Selecione o método de preparo</option>
-            {#each modosPreparo as metodo}
-              <option value={metodo}>{metodo.descricaoMetodo}</option>
-            {/each}
-          </select>
         </div>
       {:else}
         <div>
@@ -1045,8 +991,47 @@
   }
 
   .modal-footer .btn-save {
-    background-color: rgb(53, 65, 40);
+    background: #a3b18a;
     color: white;
+  }
+
+  .link-pagina {
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 15px;
+    margin-top: 12.5px;
+    margin-right: 6.5px;
+    padding: 8.5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    flex: 1;
+    gap: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .link-pagina:hover {
+    background: rgba(255, 255, 255, 0.8);
+    transform: translateY(-1px);
+  }
+
+  .link-pagina .tituloAccordion {
+    font-size: 2vh;
+    color: #354128;
+    font-weight: 700;
+  }
+
+  .link-pagina .arrow {
+    min-width: 24px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5vh;
+    color: #354128;
+    font-weight: bold;
   }
 
   /* --- Estilos do Sub-Modal (NOVO) --- */

@@ -37,11 +37,11 @@ export async function controllerCriarPlanta(
 }
 
 export async function controllerListagemPlantas(
-  filtroRename?: string,
-  filtroReniSUS?: string,
-  idIndicacaoUso?: Number,
-  idMetodoPreparo?: Number,
-  idUsuario?: Number,
+  filtroRename?: string | null,
+  filtroReniSUS?: string | null,
+  idIndicacaoUso?: Number | null,
+  idMetodoPreparo?: Number | null,
+  idUsuario?: Number | null,
 ) {
   return await serviceListagemPlantas(filtroRename, filtroReniSUS, idIndicacaoUso, idMetodoPreparo, idUsuario)
 }

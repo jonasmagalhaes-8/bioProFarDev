@@ -60,7 +60,7 @@
       await controllerSalvarNovaSenhaRecuperacaoUsuario($usuarioStore.idUsuario, senha, senhaConfirmar)
       alert('Senha alterada com sucesso!')
       onSairSenha()
-    } catch (error) {
+    } catch (error: any) {
       alert(error.message)
     }
   }

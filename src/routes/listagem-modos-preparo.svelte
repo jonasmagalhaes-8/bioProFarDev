@@ -46,7 +46,7 @@
   const getModoPreparo = async () => {
     try {
       modosPreparo = await controllerListagemModosPreparo()
-    } catch (error) {
+    } catch (error: any) {
       alert(error.message)
     }
   }
@@ -65,7 +65,7 @@
       await getModoPreparo()
       modoPreparo = new MetodoPreparo()
       modalCriarModoPreparoAberto = false
-    } catch (error) {
+    } catch (error: any) {
       alert(error.message)
     }
   }
@@ -92,6 +92,15 @@
       <div on:submit={(e) => onCriarModoPreparo(e)}>
         <label for="Descrição">Descrição</label>
         <Input autoCapitalize="sentences" bind:value={modoPreparo.descricaoMetodo} />
+
+        <label for="Tipo">Tipo de Preparo</label>
+        <select style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px;" bind:value={modoPreparo.tipo}>
+          <option value="CASEIRA">CASEIRA</option>
+          <option value="FARMACÊUTICA">FARMACÊUTICA</option>
+        </select>
+
+        <label for="Detalhamento">Detalhamento</label>
+        <textarea bind:value={modoPreparo.detalhamento}></textarea>
 
         <label for="referencia1">Referência 1</label>
         <Input autoCapitalize="sentences" bind:value={modoPreparo.referencia1} />

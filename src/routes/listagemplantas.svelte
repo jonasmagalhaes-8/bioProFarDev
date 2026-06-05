@@ -54,7 +54,7 @@
   <div class="fonteDestaque">{titulo}</div>
   <div class="fonteDescricao">
     {descricao}
-    <a class="link" href="www.google.com">Saiba mais</a>
+    <a class="link" href="https://www.google.com" target="_blank" rel="noopener noreferrer">Saiba mais</a>
   </div>
   <div class="fonteDestaque">
     {descricaoListagemPlantas}

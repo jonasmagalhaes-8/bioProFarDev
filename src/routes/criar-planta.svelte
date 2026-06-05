@@ -435,7 +435,7 @@
                 <p><strong>Referência:</strong> {estudo.estudoCientifico.referencia}</p>
                 <p>
                   <strong>Link:</strong>
-                  <a href={estudo.estudoCientifico.linkReferencia} target="_blank"
+                  <a href={estudo.estudoCientifico.linkReferencia.startsWith('http') ? estudo.estudoCientifico.linkReferencia : `https://${estudo.estudoCientifico.linkReferencia}`} target="_blank"
                     >{estudo.estudoCientifico.linkReferencia}</a
                   >
                 </p>

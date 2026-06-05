@@ -3,10 +3,10 @@
   import { url } from '@roxi/routify'
 
   export let planta: Planta
-  export let origemListagemRename: boolean
-  export let origemListagemFavoritos: boolean
-  export let idIndicacaoUso: Number
-  export let idModoPreparo: Number
+  export let origemListagemRename: boolean | null
+  export let origemListagemFavoritos: boolean | null
+  export let idIndicacaoUso: Number | null
+  export let idModoPreparo: Number | null
 </script>
 
 <a

@@ -20,7 +20,7 @@
       localStorage.setItem('usuario', JSON.stringify(response))
       usuarioStore.set(response)
       irPara('/')
-    } catch (err) {
+    } catch (err: any) {
       error = err.message
     }
   }
